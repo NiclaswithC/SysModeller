@@ -11,7 +11,7 @@
   // Navigation entlang des Maschinenbau-Prozesses, nicht entlang des Werkzeugs.
   const REITER_GRUPPEN = [
     { titel: "", tabs: ["ueberblick"] },
-    { titel: "Vertrieb", tabs: ["angebot"] },
+    { titel: "Vertrieb", tabs: ["prozess", "angebot"] },
     { titel: "Engineering", tabs: ["struktur", "merkmale", "regeln"] },
     { titel: "Standards", tabs: ["bibliothek"] },
     { titel: "Übergabe", tabs: ["kennzeichnung", "uebergabe"] },
@@ -23,7 +23,7 @@
     projekt: null,
     tab: "ueberblick",
     aktiveKonfigId: "",
-    auswahl: { elementId: null, merkmalId: null, regelId: null, konfigId: null },
+    auswahl: { elementId: null, merkmalId: null, regelId: null, konfigId: null, modulId: null, schrittId: null },
     ansicht: { modus: "bild", bmk: false, zoom: 1 },   // Darstellung des Maschinenbilds
     regelTest: { antworten: {} },                       // Probier-Antworten des Regel-Simulators
     bibliothek: { module: [] },                         // Firmenstandards (projektübergreifend)
@@ -50,21 +50,36 @@
 
     projektErsetzen(projekt) {
       this.projekt = projekt;
-      this.auswahl = { elementId: null, merkmalId: null, regelId: null, konfigId: null };
+      this.auswahl = { elementId: null, merkmalId: null, regelId: null, konfigId: null, modulId: null, schrittId: null };
       this.aktiveKonfigId = "";
       this.speichern();
       this.render();
     },
 
     render() {
-      const wurzel = document.getElementById("app");
-      wurzel.replaceChildren();
-      wurzel.append(renderKopf());
-      wurzel.append(renderNavigation());
-      const inhalt = h("main", { class: "inhalt" });
-      const reiter = Tabs[this.tab] || Tabs.ueberblick;
-      reiter.render(inhalt);
-      wurzel.append(inhalt);
+      // Reentranz-Schutz: Entfernt replaceChildren ein fokussiertes Eingabefeld,
+      // feuert dessen change/blur mitten im Aufräumen und würde sonst ein
+      // verschachteltes Neuzeichnen auslösen.
+      if (this._zeichnet) {
+        this._nochmalZeichnen = true;
+        return;
+      }
+      this._zeichnet = true;
+      try {
+        do {
+          this._nochmalZeichnen = false;
+          const wurzel = document.getElementById("app");
+          wurzel.replaceChildren();
+          wurzel.append(renderKopf());
+          wurzel.append(renderNavigation());
+          const inhalt = h("main", { class: "inhalt" });
+          const reiter = Tabs[this.tab] || Tabs.ueberblick;
+          reiter.render(inhalt);
+          wurzel.append(inhalt);
+        } while (this._nochmalZeichnen);
+      } finally {
+        this._zeichnet = false;
+      }
     },
   };
 
@@ -156,9 +171,20 @@
       console.warn("Bibliothek konnte nicht geladen werden:", fehler);
     }
     if (!App.bibliothek || !Array.isArray(App.bibliothek.module) || !App.bibliothek.module.length) {
-      // Startbestand: zwei Beispielstandards, damit die Bibliothek greifbar ist.
-      App.bibliothek = { module: SysM.Bibliothek.beispielModule(new Date().toLocaleDateString("de-DE")) };
+      // Startbestand, damit Bibliothek und Funktionskatalog greifbar sind.
+      App.bibliothek = SysM.Bibliothek.beispielBibliothek(new Date().toLocaleDateString("de-DE"));
+    } else if (!Array.isArray(App.bibliothek.funktionen) || !App.bibliothek.funktionen.length) {
+      // Ältere Bibliothek ohne Funktionskatalog: Katalog nachrüsten,
+      // fehlende Beispielmodule (auf die er verweist) mitbringen.
+      const beispiel = SysM.Bibliothek.beispielBibliothek(new Date().toLocaleDateString("de-DE"));
+      for (const modul of beispiel.module) {
+        if (!App.bibliothek.module.some((m) => m.name === modul.name)) App.bibliothek.module.push(modul);
+      }
+      App.bibliothek.funktionen = beispiel.funktionen;
+      App.bibliothek.loesungen = beispiel.loesungen;
     }
+    App.bibliothek.funktionen = App.bibliothek.funktionen || [];
+    App.bibliothek.loesungen = App.bibliothek.loesungen || [];
     try {
       const gespeichert = localStorage.getItem(SPEICHER_SCHLUESSEL);
       if (gespeichert) {

@@ -132,7 +132,8 @@
         class: "mb-box"
           + (opts.auswahlId === box.el.id ? " mb-ausgewaehlt" : "")
           + (!box.enthalten ? " mb-entfaellt" : "")
-          + (box.el.verwendung === "option" ? " mb-option" : ""),
+          + (box.el.verwendung === "option" ? " mb-option" : "")
+          + (box.el.eto ? " mb-eto" : ""),
         "data-element-id": box.el.id,
       });
       const farben = FARBEN[box.el.typ] || FARBEN.Komponente;
@@ -151,6 +152,7 @@
       const titel = svgEl("title", {});
       titel.textContent = box.el.name + (kz && kz.bmk ? "  " + kz.bmk : "") +
         (box.el.verwendung === "option" ? "  (Option)" : "") +
+        (box.el.eto ? "  (Sonderlösung ETO)" : "") +
         (!box.enthalten ? "  – in dieser Variante nicht enthalten" : "");
       gruppe.append(titel);
 
@@ -257,6 +259,12 @@
     kaestchen.className = "mb-legende-farbe mb-legende-option";
     option.append(kaestchen, "Option");
     div.append(option);
+    const eto = document.createElement("span");
+    eto.className = "mb-legende-eintrag";
+    const etoKasten = document.createElement("span");
+    etoKasten.className = "mb-legende-farbe mb-legende-eto";
+    eto.append(etoKasten, "Sonderlösung (ETO)");
+    div.append(eto);
     return div;
   }
 

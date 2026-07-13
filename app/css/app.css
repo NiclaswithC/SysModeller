@@ -339,6 +339,49 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent-hell
 .vorlage-knopf.standard { border-color: #9db8d9; background: #f3f7fc; }
 .vorlage-version { color: var(--tinte-leise); font-size: 11px; }
 
+/* ---- Prozess (Funktion -> Lösungsprinzip) ---- */
+.schritt-nummer {
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--akzent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  flex: none;
+}
+.funktion-block {
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #fbfcfd;
+}
+.loesung-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.loesung-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 13.5px;
+  padding: 7px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--linie);
+  background: #fff;
+  color: var(--tinte);
+  cursor: pointer;
+}
+.loesung-chip:hover { border-color: var(--akzent); background: var(--akzent-hell); }
+.loesung-chip.aktiv { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.loesung-chip.aktiv .badge { background: #fff; }
+.loesung-chip.eto { border-style: dashed; }
+.badge.typ-eto { background: #fbe9e9; border-color: var(--fehler-rand); color: var(--fehler-rand); }
+.herkunft-zeile { margin: -6px 0 10px; }
+
+.mb-box.mb-eto .mb-deckel { stroke: var(--fehler-rand); stroke-dasharray: 4 3; stroke-width: 1.6; }
+.mb-legende-eto { border: 1.5px dashed var(--fehler-rand); background: #fff; }
+.umfang-chip.eto { background: var(--warnung-grund); color: #7a5c17; border-color: var(--warnung-rand); }
+
 /* ---- Angebot ---- */
 .umfang-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .umfang-chip {

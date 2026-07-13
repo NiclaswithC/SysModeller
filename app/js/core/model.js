@@ -130,6 +130,7 @@
       merkmale: [],
       regeln: [],
       konfigurationen: [],
+      prozess: [],        // [{id, name, beschreibung, funktionen: [{id, funktionId, loesungId}]}]
       kennzeichnung: {
         trennerFunktion: ".",
         plcAdressenAutomatisch: true,
@@ -362,6 +363,7 @@
       merkmale: (daten.merkmale || []).map((m) => neuesMerkmal(m)),
       regeln: (daten.regeln || []).map((r) => neueRegel(r)),
       konfigurationen: (daten.konfigurationen || []).map((k) => neueKonfiguration(k)),
+      prozess: (daten.prozess || []).map((s) => Object.assign({ id: neueId("ps"), name: "Schritt", beschreibung: "", funktionen: [] }, s)),
       kennzeichnung: Object.assign({ trennerFunktion: ".", plcAdressenAutomatisch: true }, daten.kennzeichnung || {}),
     };
     return projekt;

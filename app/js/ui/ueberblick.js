@@ -30,7 +30,7 @@
   ];
 
   const PROZESS = [
-    { schritt: "Anfrage", wer: "Vertrieb", was: "Kundenwünsche als Antworten erfassen – Machbarkeit wird sofort gegen die Engineering-Regeln geprüft." },
+    { schritt: "Anfrage", wer: "Vertrieb", was: "Den Prozess des Kunden als Schritte aufnehmen; je Schritt Funktion und Lösungsprinzip wählen (z. B. „Spannen: pneumatisch“) – dahinter stehen die Firmenstandards, Lücken werden als Sonderlösung (ETO) sichtbar." },
     { schritt: "Angebot", wer: "Vertrieb", was: "Angebotsmappe per Klick: Maschinenbild, Lieferumfang, technische Daten, Hinweise – eine Datei für den Kunden." },
     { schritt: "Auftrag → Engineering", wer: "Mechanik / Elektrik / Software", was: "Dieselbe Konfiguration liefert jedem Gewerk seine Sicht: Strukturliste, BMK-Liste, PLC-Tags – ohne Neuerfassung." },
     { schritt: "Standardpflege", wer: "Engineering", was: "Bewährte Bausteine in die Bibliothek veröffentlichen; Erfahrungen als Regeln festhalten – das nächste Angebot kann sie schon." },

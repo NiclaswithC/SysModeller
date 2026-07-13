@@ -174,6 +174,15 @@
     }
     for (const m of ergebnis.meldungen) panel.append(meldungBox(m.stufe, m.text));
 
+    // Sonderlösungen (ETO) im Umfang sichtbar machen – hier entsteht Aufwand.
+    const etoImUmfang = SysM.Prozess.etoElemente(projekt, ergebnis.elementStatus);
+    if (etoImUmfang.length) {
+      panel.append(h("div", { class: "meldung meldung-warnung" },
+        h("strong", {}, `${etoImUmfang.length} Sonderlösung(en) (ETO) im Lieferumfang: `),
+        etoImUmfang.map((e) => `„${e.name}“`).join(", "),
+        " – noch kein Firmenstandard, Engineering-Aufwand und Termin einplanen."));
+    }
+
     // Maschinenbild
     const kennzeichen = SysM.Kennzeichnung.berechneKennzeichen(projekt);
     panel.append(Maschinenbild.render(projekt, {
@@ -191,10 +200,11 @@
     for (const { el, tiefe } of Model().elementeInBaumfolge(projekt)) {
       if (tiefe !== 1) continue;
       const status = ergebnis.elementStatus[el.id];
+      const hatEto = el.eto || projekt.elemente.some((k) => k.eto && Model().istNachfahre(projekt, el.id, k.id));
       chips.append(h("span", {
-        class: "umfang-chip" + (status.effektivEnthalten ? "" : " entfaellt"),
-        title: status.grund,
-      }, (status.effektivEnthalten ? "✓ " : "✕ ") + el.name));
+        class: "umfang-chip" + (status.effektivEnthalten ? "" : " entfaellt") + (hatEto && status.effektivEnthalten ? " eto" : ""),
+        title: status.grund + (hatEto ? " – enthält Sonderlösung (ETO)" : ""),
+      }, (status.effektivEnthalten ? "✓ " : "✕ ") + el.name + (hatEto ? " (ETO)" : "")));
     }
     umfangBlock.append(chips);
     panel.append(umfangBlock);
@@ -298,10 +308,38 @@
         const einzug = tiefe === 2 ? "&nbsp;&nbsp;&nbsp;&nbsp;" : "";
         const stil = status.effektivEnthalten ? "" : ' style="color:#999"';
         const vermerk = status.effektivEnthalten
-          ? (el.verwendung === "option" ? " (gewählte Option)" : "")
+          ? (el.verwendung === "option" ? " (gewählte Option)" : "") + (el.eto ? " <strong>(Sonderlösung ETO)</strong>" : "")
           : " – nicht im Lieferumfang";
-        return `<tr${stil}><td>${einzug}${status.effektivEnthalten ? "✓" : "✕"} ${htmlSicher(el.name)}${vermerk}</td><td>${htmlSicher((el.kommentar || ""))}</td></tr>`;
+        const herkunft = el.herkunftFunktion && el.herkunftFunktion.art === "funktion"
+          ? `erfüllt „${htmlSicher(el.herkunftFunktion.funktionName)}“ (${htmlSicher(el.herkunftFunktion.loesungName)})`
+          : htmlSicher(el.kommentar || "");
+        return `<tr${stil}><td>${einzug}${status.effektivEnthalten ? "✓" : "✕"} ${htmlSicher(el.name)}${vermerk}</td><td>${herkunft}</td></tr>`;
       }).join("");
+
+    const etoImUmfang = SysM.Prozess.etoElemente(projekt, ergebnis.elementStatus);
+    const etoAbschnitt = etoImUmfang.length
+      ? `<h2>Sonderlösungen (kundenspezifische Entwicklung)</h2>
+         <p>Für die folgenden Umfänge gibt es noch keinen Firmenstandard – sie werden projektspezifisch
+         konstruiert (Aufwand und Termin gesondert kalkulieren):</p>
+         <ul>${etoImUmfang.map((e) => {
+           const hf = e.herkunftFunktion;
+           return `<li><strong>${htmlSicher(e.name)}</strong>${hf && hf.funktionName ? ` – für die Funktion „${htmlSicher(hf.funktionName)}“ im Prozessschritt „${htmlSicher(hf.schrittName)}“` : ""}</li>`;
+         }).join("")}</ul>`
+      : "";
+
+    const prozessZeilen = (projekt.prozess || []).map((schritt, i) => {
+      const loesungen = (schritt.funktionen || [])
+        .filter((f) => f.loesungId)
+        .map((f) => {
+          const loesung = SysM.Bibliothek.findeLoesung(App.bibliothek, f.loesungId);
+          const funktion = SysM.Bibliothek.findeFunktion(App.bibliothek, f.funktionId);
+          return `${htmlSicher(funktion ? funktion.name : "?")}: ${htmlSicher(loesung ? loesung.name : "?")}`;
+        }).join("<br>");
+      return `<tr><td><strong>${i + 1}. ${htmlSicher(schritt.name)}</strong></td><td>${loesungen || "–"}</td></tr>`;
+    }).join("");
+    const prozessAbschnitt = prozessZeilen
+      ? `<h2>Ihr Prozess – unsere Lösung</h2><table>${prozessZeilen}</table>`
+      : "";
 
     const datenZeilen = projekt.merkmale
       .filter((mk) => !mk.istKonfiguration && ergebnis.werte[mk.id])
@@ -344,11 +382,15 @@
   <h2>Ihre Maschine</h2>
   <div class="bild">${svg}</div>
 
+  ${prozessAbschnitt}
+
   <h2>Ihre Anforderungen</h2>
   <table>${antwortenZeilen}</table>
 
   <h2>Lieferumfang</h2>
   <table>${umfangZeilen}</table>
+
+  ${etoAbschnitt}
 
   <h2>Technische Auslegung</h2>
   ${datenZeilen ? `<table>${datenZeilen}</table>` : "<p>Keine abgeleiteten Werte.</p>"}

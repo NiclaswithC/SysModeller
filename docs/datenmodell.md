@@ -155,6 +155,21 @@ Adressvergabe in Baumreihenfolge, getrennt nach Eingängen (`%I`) und Ausgängen
 (`%Q`): Bool bitweise gepackt, Int/Word wortausgerichtet (`%IW/%QW`), Real
 doppelwortausgerichtet (`%ID/%QD`).
 
+## Prozessmodell (Vertriebseinstieg)
+
+```json
+"prozess": [
+  { "id": "ps-…", "name": "Fügen", "beschreibung": "",
+    "funktionen": [ { "id": "fe-…", "funktionId": "fn-spannen", "loesungId": "ls-spann-pneu" } ] }
+]
+```
+
+`erzeugeStruktur` (core/prozess.js) gleicht die Struktur mit dem Prozess ab:
+je Schritt eine Station in Prozessreihenfolge, je gewählter Lösung die
+Modulinstanz (CTO) oder eine ETO-Hülle (`eto: true`). Generierte Elemente
+tragen `generiert: true` und `herkunftFunktion` (Schritt/Funktion/Lösung) –
+von Hand ergänzte Elemente bleiben beim Abgleich unangetastet.
+
 ## Firmenstandard-Bibliothek
 
 Die Bibliothek lebt getrennt vom Projekt (sie gilt firmenweit) in einer eigenen
@@ -180,6 +195,11 @@ Schnappschuss eines Unterbaums plus die dort verwendeten Merkmalsdefinitionen:
   Sätze gemeldet. So bleibt sichtbar, ob „Standard“ noch Standard ist.
 - **Versionierung:** Veröffentlichen unter vorhandenem Namen erhöht die Version;
   ältere Versionen bleiben erhalten, der Baukasten zeigt je Name die neueste.
+- **Funktionskatalog:** Die Bibliothek führt zusätzlich `funktionen`
+  (WAS: „Spannen“) und `loesungen` (WIE: „Pneumatisch spannen“, Verweis auf ein
+  Modul über den Namen – oder leer = ETO). Damit ist der Vertriebseinstieg
+  „Prozess → Funktion → Lösungsprinzip → Modul“ vollständig aus der Bibliothek
+  gespeist.
 
 ## Übergabedaten
 

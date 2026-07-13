@@ -24,11 +24,37 @@ an jeder Station tatsächlich fließen:
 
 | Prozessschritt | Wer | Information heute (typisch) | Im Werkzeug |
 |---|---|---|---|
-| Anfrage | Vertrieb | Lastenheft, Excel-Checkliste, Rückfragen per Mail ans Engineering | Kundenanfrage als beantwortete Fragen; Machbarkeit sofort gegen die hinterlegten Engineering-Regeln geprüft |
+| Anfrage | Vertrieb | Lastenheft, Excel-Checkliste, Rückfragen per Mail ans Engineering | Prozess des Kunden als Schritte modellieren; je Schritt Funktion und Lösungsprinzip wählen; Kundenanfrage als beantwortete Fragen; Machbarkeit sofort gegen die hinterlegten Engineering-Regeln geprüft |
 | Angebot | Vertrieb → Kunde | Word/PDF, von Hand aus alten Angeboten kopiert | **Angebotsmappe** per Klick: Maschinenbild, Lieferumfang, technische Daten, Hinweise – erzeugt, nicht abgeschrieben |
 | Auftrag → Engineering | Vertrieb → Mechanik/Elektrik/Software | Excel-Listen je Gewerk, jede Disziplin erfasst neu | dieselbe Konfiguration liefert jedem Gewerk seine Projektion: Strukturliste, BMK-Liste, PLC-Tags, Merkmalliste |
 | Standardpflege | Engineering | „Standard“ = Ordner mit alten Projekten | **Bibliothek**: Module einmal definiert, versioniert, Abweichungs-Prüfung je Instanz; Erfahrungen als Regeln mit Begründung |
 | Service | Service | As-Built verstreut in Doku und Köpfen | Maschinenbild + Kennzeichen + Merkmale je ausgelieferter Konfiguration im Modell |
+
+### Vom Kundenprozess zur Maschine (RFLP-Gedanke, ohne den Namen zu benutzen)
+
+Der Vertriebseinstieg folgt der Kaskade des Systems Engineering – in der Sprache
+des Maschinenbauers:
+
+| Ebene (RFLP) | Im Werkzeug | Beispiel |
+|---|---|---|
+| Requirements | Prozessschritte des Kunden | „Zuführen → Fügen → Prüfen“ |
+| Functional | Funktion je Schritt (Funktionskatalog) | „Spannen“ |
+| Logical | Lösungsprinzip je Funktion | „Pneumatisch / Hydraulisch / Elektrisch spannen“ |
+| Physical | Firmenstandard-Modul mit Vorzugskomponenten und Parametern – oder ETO-Hülle | „Spanneinheit pneumatisch v1“ |
+
+„Maschine aufbauen“ erzeugt daraus die Struktur: je Prozessschritt eine Station
+in Prozessreihenfolge, darin je gewählter Lösung die Modulinstanz (CTO – sofort
+parametrierbar, Vorzugskomponenten inklusive, anpassbar mit Abweichungs-Prüfung)
+bzw. eine **ETO-Hülle**, wo es noch keinen Standard gibt. Der Abgleich ist
+schonend: von Hand ergänzte Elemente bleiben stehen. Jedes generierte Element
+kennt seine Herkunft (Schritt/Funktion/Lösung) – Rückverfolgbarkeit von der
+Kundenanforderung bis zum Betriebsmittel. ETO-Anteile werden im Angebot und in
+der Angebotsmappe ausgewiesen (Aufwand!) und wandern nach Bewährung als neue
+Standards in die Bibliothek – so wird aus ETO über die Zeit CTO.
+
+Beide Einstiege bleiben möglich: **nach Prozess** (beratungsintensiv, wie oben)
+oder **nach Produktpalette** (Serienmaschinenbau: Struktur steht, es wird nur
+konfiguriert und parametriert).
 
 ### Die vier Kernprobleme und ihre Antwort im Werkzeug
 

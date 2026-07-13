@@ -11,6 +11,7 @@ const Exporte = require("../app/js/core/exporte.js");
 const Beispiel = require("../app/js/core/beispiel.js");
 const Vorlagen = require("../app/js/core/vorlagen.js");
 const Bibliothek = require("../app/js/core/bibliothek.js");
+const Prozess = require("../app/js/core/prozess.js");
 
 let ok = 0;
 let fehler = 0;
@@ -154,9 +155,87 @@ console.log("Bibliothek …");
   gleich(versionen.find((m) => m.name === "X").version, 3, "Neueste Versionen: höchste gewinnt");
 
   // Startbestand
-  const start = Bibliothek.beispielModule("01.01.2026");
-  gleich(start.length, 2, "Beispielbibliothek: zwei Module");
-  pruefe(start[0].wurzel.kinder.length > 0, "Beispielbibliothek: Module mit Inhalt");
+  const start = Bibliothek.beispielBibliothek("01.01.2026");
+  gleich(start.module.length, 4, "Beispielbibliothek: vier Module");
+  pruefe(start.module.every((m) => m.wurzel.kinder.length > 0), "Beispielbibliothek: Module mit Inhalt");
+  pruefe(start.funktionen.some((f) => f.name === "Spannen"), "Beispielbibliothek: Funktion Spannen");
+  const spannLoesungen = Bibliothek.loesungenZuFunktion(start, "fn-spannen");
+  gleich(spannLoesungen.length, 3, "Beispielbibliothek: drei Lösungsprinzipien für Spannen");
+  pruefe(Bibliothek.modulZuLoesung(start, Bibliothek.findeLoesung(start, "ls-spann-pneu")) !== null,
+    "Beispielbibliothek: Pneumatisch spannen ist CTO");
+  gleich(Bibliothek.modulZuLoesung(start, Bibliothek.findeLoesung(start, "ls-spann-hydr")), null,
+    "Beispielbibliothek: Hydraulisch spannen ist ETO");
+}
+
+// ---- Prozess -> Struktur ------------------------------------------------------
+console.log("Prozess …");
+{
+  const bibliothek = Bibliothek.beispielBibliothek("01.01.2026");
+  const projekt = Model.neuesProjekt("Montagezelle");
+
+  // Prozess: Zuführen (Band, CTO) -> Spannen (pneumatisch CTO + hydraulisch ETO getrennt testen)
+  const s1 = Prozess.neuerSchritt({ name: "Zuführen" });
+  s1.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-zufuehren", loesungId: "ls-band" }));
+  const s2 = Prozess.neuerSchritt({ name: "Fügen" });
+  s2.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-spannen", loesungId: "ls-spann-hydr" }));
+  projekt.prozess.push(s1, s2);
+
+  let bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  pruefe(bericht.length >= 4, "Erzeugen: Bericht beschreibt die Schritte");
+
+  const wurzel = projekt.elemente.find((e) => !e.elternId);
+  const stationen = Model.kinder(projekt, wurzel.id);
+  gleich(stationen.length, 2, "Erzeugen: je Prozessschritt eine Station");
+  gleich(stationen[0].name, "Zuführen", "Erzeugen: Stationsreihenfolge = Prozessreihenfolge");
+  gleich(stationen[1].name, "Fügen", "Erzeugen: zweite Station");
+
+  const band = Model.kinder(projekt, stationen[0].id)[0];
+  pruefe(band && band.herkunft && band.herkunft.name === "Förderband Typ A", "Erzeugen: CTO-Modul instanziiert");
+  gleich(band.herkunftFunktion.funktionName, "Zuführen", "Erzeugen: Rückverfolgung zur Funktion");
+  pruefe(Model.kinder(projekt, band.id).length === 2, "Erzeugen: Vorzugskomponenten enthalten");
+
+  const huelle = Model.kinder(projekt, stationen[1].id)[0];
+  pruefe(huelle && huelle.eto === true, "Erzeugen: ETO-Lösung wird zur Hülle");
+  gleich(huelle.name, "Hydraulisch spannen", "Erzeugen: Hülle trägt den Lösungsnamen");
+  gleich(Prozess.etoElemente(projekt, null).length, 1, "Erzeugen: ETO-Liste findet die Hülle");
+
+  // Lösung wechseln: hydraulisch -> pneumatisch (CTO) ersetzt die Hülle.
+  s2.funktionen[0].loesungId = "ls-spann-pneu";
+  bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  const neu = Model.kinder(projekt, stationen[1].id).filter((k) => k.generiert);
+  gleich(neu.length, 1, "Wechsel: genau eine generierte Lösung in der Station");
+  pruefe(neu[0].herkunft && neu[0].herkunft.name === "Spanneinheit pneumatisch", "Wechsel: neue Lösung ist das CTO-Modul");
+  gleich(Prozess.etoElemente(projekt, null).length, 0, "Wechsel: keine ETO-Hülle mehr");
+
+  // Von Hand ergänztes Element bleibt beim Aktualisieren stehen.
+  const manuell = Model.neuesElement({ name: "Zusatzsensor", typ: "Komponente", elternId: stationen[1].id, produktKlasse: "B" });
+  projekt.elemente.push(manuell);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  pruefe(Model.findeElement(projekt, manuell.id) !== null, "Aktualisieren: Handarbeit bleibt erhalten");
+
+  // Idempotenz: ohne Änderung passiert nichts.
+  const anzahl = projekt.elemente.length;
+  bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  gleich(projekt.elemente.length, anzahl, "Aktualisieren: idempotent ohne Änderungen");
+  pruefe(bericht.some((z) => z.includes("bereits auf dem Stand")), "Aktualisieren: Bericht meldet keinen Änderungsbedarf");
+
+  // Schritt löschen entfernt die generierte Station (Handarbeit darunter geht mit – bewusst).
+  projekt.prozess = projekt.prozess.filter((s) => s.id !== s1.id);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  gleich(Model.kinder(projekt, wurzel.id).length, 1, "Schritt gelöscht: Station entfernt");
+
+  // Neue Schritte werden in Prozessfolge VOR handangelegte Stationen sortiert.
+  const s0 = Prozess.neuerSchritt({ name: "Vorbereiten" });
+  projekt.prozess.unshift(s0);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  const folge = Model.kinder(projekt, wurzel.id).map((e) => e.name);
+  gleich(folge[0], "Vorbereiten", "Reihenfolge: neuer erster Schritt steht vorn");
+
+  gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Prozess: Projekt bleibt gültig");
+
+  // Kennzeichen bleiben auf der generierten Struktur berechenbar.
+  const kz = Kennzeichnung.berechneKennzeichen(projekt);
+  pruefe(Object.values(kz).length > 0, "Prozess: Kennzeichen berechenbar");
 }
 
 {

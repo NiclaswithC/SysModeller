@@ -201,15 +201,78 @@
     return (module || []).find((m) => m.id === modulId) || null;
   }
 
-  /** Startbestand: zwei Beispielstandards aus dem Baukasten. */
-  function beispielModule(stand) {
+  // ---- Funktionskatalog (RFLP-Gedanke, ohne den Namen zu benutzen) -----------
+  //
+  // Funktion   = WAS gebraucht wird („Spannen“, „Dosieren“) – Kundensprache.
+  // Lösung     = WIE es gelöst wird („Pneumatisch spannen“) – der logische
+  //              Lösungsraum. Verweist auf ein Standardmodul (CTO, sofort
+  //              konfigurierbar) oder auf keines (ETO – es entsteht eine Hülle,
+  //              die das Engineering ausarbeitet).
+  // Der Verweis läuft über den Modul-NAMEN, damit Lösungen automatisch auf die
+  // jeweils neueste Modulversion zeigen.
+
+  function neueFunktion(vorgabe) {
+    const Model = dep("Model", "./model.js");
+    return Object.assign({
+      id: Model.neueId("fn"),
+      name: "Neue Funktion",
+      beschreibung: "",
+    }, vorgabe || {});
+  }
+
+  function neueLoesung(vorgabe) {
+    const Model = dep("Model", "./model.js");
+    return Object.assign({
+      id: Model.neueId("ls"),
+      funktionId: "",
+      name: "Neue Lösung",
+      modulName: "",      // leer = ETO (noch kein Standard)
+      beschreibung: "",
+    }, vorgabe || {});
+  }
+
+  function findeFunktion(bibliothek, funktionId) {
+    return (bibliothek.funktionen || []).find((f) => f.id === funktionId) || null;
+  }
+
+  function findeLoesung(bibliothek, loesungId) {
+    return (bibliothek.loesungen || []).find((l) => l.id === loesungId) || null;
+  }
+
+  function loesungenZuFunktion(bibliothek, funktionId) {
+    return (bibliothek.loesungen || []).filter((l) => l.funktionId === funktionId);
+  }
+
+  /** Modul (neueste Version) zu einer Lösung – null bei ETO. */
+  function modulZuLoesung(bibliothek, loesung) {
+    if (!loesung || !loesung.modulName) return null;
+    return neuesteVersionen(bibliothek.module).find((m) => m.name === loesung.modulName) || null;
+  }
+
+  /** Startbestand: Beispielstandards samt Funktionskatalog. */
+  function beispielBibliothek(stand) {
     const Model = dep("Model", "./model.js");
     const Vorlagen = dep("Vorlagen", "./vorlagen.js");
     const projekt = Model.neuesProjekt("Vorlage");
     const wurzelId = projekt.elemente[0].id;
+
     const band = Vorlagen.instanziiere(projekt, "bg-foerderband", wurzelId);
     const schrank = Vorlagen.instanziiere(projekt, "st-steuerung", wurzelId);
-    return [
+
+    const dosier = Vorlagen.instanziiere(projekt, "st-dosier", wurzelId);
+    Vorlagen.instanziiere(projekt, "ko-pumpe", dosier.id).name = "Dosierpumpe";
+    Vorlagen.instanziiere(projekt, "ko-durchfluss", dosier.id);
+    Vorlagen.instanziiere(projekt, "ko-ventil", dosier.id).name = "Dosierventil";
+
+    const spann = Model.neuesElement({
+      name: "Spanneinheit", typ: "Baugruppe", elternId: wurzelId, kuerzel: "SPA",
+    });
+    projekt.elemente.push(spann);
+    Vorlagen.instanziiere(projekt, "ko-magnetventil", spann.id).name = "Spannventil";
+    Vorlagen.instanziiere(projekt, "ko-sensor", spann.id).name = "Endlage gespannt";
+    Vorlagen.instanziiere(projekt, "ko-sensor", spann.id).name = "Endlage offen";
+
+    const module = [
       schnappschuss(projekt, band.id, {
         name: "Förderband Typ A", version: 1, stand: stand || "",
         beschreibung: "Freigegebenes Standard-Förderband: Bandmotor mit Freigabe/Störung, Lichtschranke am Einlauf.",
@@ -218,7 +281,37 @@
         name: "Schaltschrank Standard", version: 1, stand: stand || "",
         beschreibung: "Standard-Schaltschrank: SPS, Hauptschalter, Netzteil – Ort S1.",
       }),
+      schnappschuss(projekt, dosier.id, {
+        name: "Dosierstation Typ P", version: 1, stand: stand || "",
+        beschreibung: "Standard-Dosierstation mit Pumpe, Durchflussmesser und Dosierventil (Vorzugskomponenten).",
+      }),
+      schnappschuss(projekt, spann.id, {
+        name: "Spanneinheit pneumatisch", version: 1, stand: stand || "",
+        beschreibung: "Pneumatische Spanneinheit: Spannventil und Endlagenabfrage (Vorzugskomponenten).",
+      }),
     ];
+
+    const funktionen = [
+      { id: "fn-zufuehren", name: "Zuführen", beschreibung: "Produkte in die Anlage bringen und transportieren." },
+      { id: "fn-dosieren", name: "Dosieren", beschreibung: "Definierte Menge abfüllen oder zugeben." },
+      { id: "fn-spannen", name: "Spannen", beschreibung: "Werkstück für die Bearbeitung fixieren." },
+      { id: "fn-verschliessen", name: "Verschließen", beschreibung: "Behälter oder Verpackung verschließen." },
+      { id: "fn-steuern", name: "Steuern", beschreibung: "Anlage steuern und bedienen." },
+    ];
+
+    const loesungen = [
+      { id: "ls-band", funktionId: "fn-zufuehren", name: "Förderband", modulName: "Förderband Typ A", beschreibung: "" },
+      { id: "ls-roboter", funktionId: "fn-zufuehren", name: "Roboter-Zuführung", modulName: "", beschreibung: "Noch kein Standard – Sonderlösung." },
+      { id: "ls-pumpendos", funktionId: "fn-dosieren", name: "Pumpendosierung", modulName: "Dosierstation Typ P", beschreibung: "" },
+      { id: "ls-schneckendos", funktionId: "fn-dosieren", name: "Schneckendosierung", modulName: "", beschreibung: "Noch kein Standard – Sonderlösung." },
+      { id: "ls-spann-pneu", funktionId: "fn-spannen", name: "Pneumatisch spannen", modulName: "Spanneinheit pneumatisch", beschreibung: "" },
+      { id: "ls-spann-hydr", funktionId: "fn-spannen", name: "Hydraulisch spannen", modulName: "", beschreibung: "Noch kein Standard – Sonderlösung." },
+      { id: "ls-spann-elek", funktionId: "fn-spannen", name: "Elektrisch spannen", modulName: "", beschreibung: "Noch kein Standard – Sonderlösung." },
+      { id: "ls-verschl-schraub", funktionId: "fn-verschliessen", name: "Schraubverschließer", modulName: "", beschreibung: "Noch kein Standard – Sonderlösung." },
+      { id: "ls-steuer-std", funktionId: "fn-steuern", name: "Standard-Schaltschrank", modulName: "Schaltschrank Standard", beschreibung: "" },
+    ];
+
+    return { module, funktionen, loesungen };
   }
 
   const api = {
@@ -228,7 +321,13 @@
     vergleiche,
     neuesteVersionen,
     findeModul,
-    beispielModule,
+    neueFunktion,
+    neueLoesung,
+    findeFunktion,
+    findeLoesung,
+    loesungenZuFunktion,
+    modulZuLoesung,
+    beispielBibliothek,
   };
 
   ns.Bibliothek = api;

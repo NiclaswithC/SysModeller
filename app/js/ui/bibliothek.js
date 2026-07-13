@@ -6,7 +6,7 @@
  * als Datei weitergeben (z. B. an Kollegen oder andere Standorte).
  */
 (function () {
-  const { h, feld, infoBox, badge, leererHinweis } = UI;
+  const { h, select, feld, infoBox, badge, leererHinweis } = UI;
   const Model = () => SysM.Model;
   const Bibliothek = () => SysM.Bibliothek;
 
@@ -58,7 +58,12 @@
           h("button", {
             class: "knopf leise",
             onclick: () => {
-              const inhalt = JSON.stringify({ schema: "sysmodeller-bibliothek/1", module: App.bibliothek.module }, null, 2);
+              const inhalt = JSON.stringify({
+                schema: "sysmodeller-bibliothek/1",
+                module: App.bibliothek.module,
+                funktionen: App.bibliothek.funktionen,
+                loesungen: App.bibliothek.loesungen,
+              }, null, 2);
               UI.download("SysModeller_Bibliothek.json", inhalt, "application/json");
             },
           }, "Exportieren"),
@@ -72,6 +77,90 @@
     container.append(linkerTeil);
     container.append(modul ? renderDetail(modul) : h("div", { class: "panel detail" }, leererHinweis("Kein Standard ausgewählt.")));
     wurzel.append(container);
+
+    wurzel.append(renderFunktionskatalog());
+  }
+
+  // ---- Funktionskatalog: Funktionen und Lösungsprinzipien ----------------------
+
+  function renderFunktionskatalog() {
+    const bibliothek = App.bibliothek;
+    const panel = h("div", { class: "panel" });
+    panel.append(h("div", { class: "panel-kopf" },
+      h("h3", {}, "Funktionen & Lösungsprinzipien"),
+      h("button", {
+        class: "knopf",
+        onclick: () => {
+          const name = prompt("Name der neuen Funktion (z. B. „Spannen“):");
+          if (!name) return;
+          bibliothek.funktionen.push(Bibliothek().neueFunktion({ name }));
+          App.speichern();
+          App.render();
+        },
+      }, "+ Funktion"),
+    ));
+    panel.append(h("p", { class: "klein" },
+      "Die Sprache des Vertriebs: Eine Funktion (WAS: „Spannen“) hat mehrere Lösungsprinzipien " +
+      "(WIE: pneumatisch, hydraulisch, elektrisch). Jedes Prinzip verweist auf einen Firmenstandard – " +
+      "oder ist als ETO markiert, solange es keinen gibt."));
+
+    if (!bibliothek.funktionen.length) {
+      panel.append(UI.leererHinweis("Noch keine Funktionen im Katalog."));
+      return panel;
+    }
+
+    const modulNamen = Bibliothek().neuesteVersionen(bibliothek.module).map((m) => m.name);
+    for (const funktion of bibliothek.funktionen) {
+      const block = h("div", { class: "unterblock" });
+      block.append(h("div", { class: "panel-kopf" },
+        h("h4", {}, UI.textEingabe(funktion.name, (w) => { funktion.name = w || funktion.name; App.speichern(); App.render(); })),
+        h("div", { class: "knopf-reihe" },
+          h("button", {
+            class: "knopf leise",
+            onclick: () => {
+              bibliothek.loesungen.push(Bibliothek().neueLoesung({ funktionId: funktion.id, name: "Neue Lösung" }));
+              App.speichern();
+              App.render();
+            },
+          }, "+ Lösung"),
+          h("button", {
+            class: "knopf gefahr",
+            onclick: () => {
+              if (!confirm(`Funktion „${funktion.name}“ samt Lösungsprinzipien aus dem Katalog löschen?`)) return;
+              bibliothek.funktionen = bibliothek.funktionen.filter((f) => f.id !== funktion.id);
+              bibliothek.loesungen = bibliothek.loesungen.filter((l) => l.funktionId !== funktion.id);
+              App.speichern();
+              App.render();
+            },
+          }, "Löschen"),
+        ),
+      ));
+
+      const loesungen = Bibliothek().loesungenZuFunktion(bibliothek, funktion.id);
+      if (!loesungen.length) {
+        block.append(h("p", { class: "klein" }, "Noch keine Lösungsprinzipien."));
+      }
+      for (const loesung of loesungen) {
+        const optionen = [{ wert: "", text: "ETO – noch kein Standard" }]
+          .concat(modulNamen.map((n) => ({ wert: n, text: "Standard: " + n })));
+        block.append(h("div", { class: "aktion-zeile" },
+          UI.textEingabe(loesung.name, (w) => { loesung.name = w || loesung.name; App.speichern(); App.render(); },
+            { placeholder: "z. B. Pneumatisch spannen" }),
+          select(optionen, loesung.modulName || "", (w) => { loesung.modulName = w; App.speichern(); App.render(); }),
+          loesung.modulName ? badge("CTO", "typ-merkmal") : badge("ETO", "typ-eto"),
+          h("button", {
+            class: "knopf leise", title: "Lösung entfernen",
+            onclick: () => {
+              bibliothek.loesungen = bibliothek.loesungen.filter((l) => l.id !== loesung.id);
+              App.speichern();
+              App.render();
+            },
+          }, "✕"),
+        ));
+      }
+      panel.append(block);
+    }
+    return panel;
   }
 
   function bibliothekImportieren() {
@@ -93,9 +182,18 @@
             const vorhanden = App.bibliothek.module.some((x) => x.name === m.name && x.version === m.version);
             if (!vorhanden) { App.bibliothek.module.push(m); neu += 1; }
           }
+          for (const f of daten.funktionen || []) {
+            if (!App.bibliothek.funktionen.some((x) => x.name === f.name)) {
+              App.bibliothek.funktionen.push(f);
+              for (const l of (daten.loesungen || []).filter((l) => l.funktionId === f.id)) {
+                App.bibliothek.loesungen.push(l);
+              }
+              neu += 1;
+            }
+          }
           App.speichern();
           App.render();
-          alert(neu + " Standard(s) übernommen.");
+          alert(neu + " Standard(s)/Funktion(en) übernommen.");
         } catch (fehler) {
           alert("Import fehlgeschlagen: " + fehler.message);
         }

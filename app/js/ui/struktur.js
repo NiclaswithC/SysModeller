@@ -130,6 +130,7 @@
         h("span", { class: "baum-name" }, el.name),
         badge(el.typ, TYP_KLASSE[el.typ] || ""),
         el.verwendung === "option" ? badge("Option", "typ-option") : null,
+        el.eto ? badge("ETO", "typ-eto") : null,
         h("span", { class: "baum-bmk" }, kz ? kz.bmk : ""),
       ));
     }
@@ -247,6 +248,19 @@
       h("span", { class: "feld-hinweis" }, " – entsteht automatisch aus Aufbau und Reihenfolge"),
     ));
 
+    // Rückverfolgbarkeit: Warum ist dieser Baustein in der Maschine?
+    if (el.herkunftFunktion && el.herkunftFunktion.art === "funktion") {
+      const hf = el.herkunftFunktion;
+      detail.append(h("p", { class: "klein herkunft-zeile" },
+        `Erfüllt die Funktion „${hf.funktionName}“ (Lösung „${hf.loesungName}“) im Prozessschritt „${hf.schrittName}“.`));
+    }
+    if (el.eto) {
+      detail.append(h("div", { class: "meldung meldung-warnung" },
+        h("strong", {}, "Sonderlösung (ETO): "),
+        "Für diese Lösung gibt es noch keinen Firmenstandard. Das Engineering arbeitet die Hülle aus – ",
+        "bewährt sie sich, unten als Firmenstandard veröffentlichen, dann ist sie beim nächsten Angebot CTO."));
+    }
+
     detail.append(feld("Name", textEingabe(el.name, (w) => { el.name = w || el.name; App.speichern(); App.render(); })));
 
     detail.append(feld("Ebene",
@@ -339,6 +353,7 @@
           });
           App.bibliothek.module.push(modul);
           el.herkunft = { modulId: modul.id, name: modul.name, version: modul.version };
+          delete el.eto; // ab jetzt ist es ein Standard
           App.speichern();
           App.render();
         },

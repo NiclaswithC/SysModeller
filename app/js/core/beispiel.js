@@ -20,6 +20,7 @@
         beschreibung: "Beispielprojekt: Abfüllanlage mit Zuführung, Dosierung, Verschließer und optionalem Etikettierer.",
       },
       kennzeichnung: { trennerFunktion: ".", plcAdressenAutomatisch: true },
+      prozess: [],
       merkmale: [
         {
           id: "mk-takt", name: "Taktleistung", typ: "zahl", einheit: "1/min", werte: [],

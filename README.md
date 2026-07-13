@@ -36,7 +36,8 @@ node tests/run-tests.js
 
 | Rolle | Reiter | Inhalt |
 |---|---|---|
-| **Vertrieb** | Angebot | Kundenanfrage mit Schaltern/Reglern erfassen → sofort Machbarkeit (geprüft gegen die Engineering-Regeln), Maschinenbild, Lieferumfang – und per Klick die **Angebotsmappe** als eigenständige HTML-Datei |
+| **Vertrieb** | Prozess | Den Prozess des Kunden als Schritte modellieren; je Schritt **Funktion** („Spannen“) und **Lösungsprinzip** („pneumatisch / hydraulisch / elektrisch“) wählen – dahinter stehen die Firmenstandards (CTO) oder **ETO-Hüllen**; „Maschine aufbauen“ erzeugt die Struktur in Prozessreihenfolge, mit Rückverfolgbarkeit bis zur Kundenanforderung |
+| **Vertrieb** | Angebot | Kundenanfrage mit Schaltern/Reglern erfassen → sofort Machbarkeit (geprüft gegen die Engineering-Regeln), Maschinenbild, Lieferumfang inkl. ETO-Ausweis – und per Klick die **Angebotsmappe** als eigenständige HTML-Datei |
 | **Engineering** | Struktur | Maschine aus dem **Baukasten** zusammensetzen (Firmenstandards + vorkonfigurierte Bausteine, per Klick oder Drag & Drop) – das interaktive **Maschinenbild** (isometrische 3D-Blockansicht) ist die Hauptansicht |
 | **Engineering** | Merkmale | Merkmal-Katalog: Definition getrennt vom Wert, optional mit stabilem Bezeichner (IRDI) |
 | **Engineering** | Regeln | Erfahrungswissen als WENN-DANN-Sätze mit Begründung – mit **Live-Simulator** (welche Regel greift wann?) |
