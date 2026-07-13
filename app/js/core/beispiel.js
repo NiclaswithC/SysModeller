@@ -1,0 +1,258 @@
+"use strict";
+/*
+ * SysModeller – Beispielprojekt "Abfüllanlage".
+ *
+ * Ein bewusst überschaubares, aber vollständiges Beispiel:
+ *   - Struktur mit Stationen, Baugruppe, Komponenten und einer Option
+ *   - Konfigurationsmerkmale (Fragen) und abgeleitete Merkmale
+ *   - Regeln für Wertableitung, Elementwahl und Konsistenzprüfung
+ *   - Signale für die PLC-Tag-Erzeugung
+ *
+ * Feste IDs, damit das Beispiel lesbar bleibt und in Tests verwendbar ist.
+ */
+(function (ns) {
+
+  function erzeuge() {
+    return {
+      schema: "sysmodeller/1",
+      projekt: {
+        name: "Abfüllanlage",
+        beschreibung: "Beispielprojekt: Abfüllanlage mit Zuführung, Dosierung, Verschließer und optionalem Etikettierer.",
+      },
+      kennzeichnung: { trennerFunktion: ".", plcAdressenAutomatisch: true },
+      merkmale: [
+        {
+          id: "mk-takt", name: "Taktleistung", typ: "zahl", einheit: "1/min", werte: [],
+          istKonfiguration: true, standardwert: "60",
+          irdi: "0173-1#02-AAE916#005",
+          kommentar: "Wie viele Flaschen pro Minute soll die Anlage abfüllen? (IRDI nur beispielhaft)",
+        },
+        {
+          id: "mk-flasche", name: "Flaschengröße", typ: "auswahl", einheit: "",
+          werte: ["0,5 l", "1,0 l", "1,5 l"],
+          istKonfiguration: true, standardwert: "1,0 l", irdi: "",
+          kommentar: "Größte abzufüllende Flasche.",
+        },
+        {
+          id: "mk-etikett", name: "Etikettierung", typ: "jaNein", einheit: "", werte: [],
+          istKonfiguration: true, standardwert: "nein", irdi: "",
+          kommentar: "Soll die Anlage Flaschen etikettieren?",
+        },
+        {
+          id: "mk-spannung", name: "Netzspannung", typ: "auswahl", einheit: "",
+          werte: ["400 V / 50 Hz", "480 V / 60 Hz"],
+          istKonfiguration: true, standardwert: "400 V / 50 Hz", irdi: "",
+          kommentar: "Anschlussspannung am Aufstellort.",
+        },
+        {
+          id: "mk-pumpentyp", name: "Pumpentyp", typ: "auswahl", einheit: "",
+          werte: ["Standard", "Hochleistung"],
+          istKonfiguration: false, standardwert: "Standard", irdi: "",
+          kommentar: "Wird aus der Taktleistung abgeleitet (Regel).",
+        },
+        {
+          id: "mk-nennweite", name: "Nennweite", typ: "text", einheit: "", werte: [],
+          istKonfiguration: false, standardwert: "", irdi: "",
+          kommentar: "Nennweite des Dosierventils, abhängig von der Flaschengröße.",
+        },
+        {
+          id: "mk-ausfuehrung", name: "Elektrische Ausführung", typ: "auswahl", einheit: "",
+          werte: ["CE", "UL"],
+          istKonfiguration: false, standardwert: "CE", irdi: "",
+          kommentar: "Wird aus der Netzspannung abgeleitet (Regel).",
+        },
+      ],
+      elemente: [
+        {
+          id: "el-abf", name: "Abfüllanlage", typ: "Anlage", elternId: null,
+          kuerzel: "ABF", produktKlasse: "", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [],
+          kommentar: "Wurzel der Anlagengliederung.",
+        },
+        // -- Zuführung ------------------------------------------------------
+        {
+          id: "el-zuf", name: "Zuführung", typ: "Station", elternId: "el-abf",
+          kuerzel: "ZUF", produktKlasse: "", ort: "F1", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
+        },
+        {
+          id: "el-trb", name: "Transportband", typ: "Baugruppe", elternId: "el-zuf",
+          kuerzel: "TRB", produktKlasse: "", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
+        },
+        {
+          id: "el-trb-m", name: "Bandmotor", typ: "Komponente", elternId: "el-trb",
+          kuerzel: "", produktKlasse: "M", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [
+            { id: "sg-trb-frei", name: "Freigabe", richtung: "A", datentyp: "Bool" },
+            { id: "sg-trb-stoer", name: "Störung", richtung: "E", datentyp: "Bool" },
+          ],
+          kommentar: "",
+        },
+        {
+          id: "el-trb-ls", name: "Lichtschranke Einlauf", typ: "Komponente", elternId: "el-trb",
+          kuerzel: "", produktKlasse: "B", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-ls-belegt", name: "Belegt", richtung: "E", datentyp: "Bool" }],
+          kommentar: "",
+        },
+        // -- Dosierstation ---------------------------------------------------
+        {
+          id: "el-dos", name: "Dosierstation", typ: "Station", elternId: "el-abf",
+          kuerzel: "DOS", produktKlasse: "", ort: "F1", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
+        },
+        {
+          id: "el-dos-p", name: "Dosierpumpe", typ: "Komponente", elternId: "el-dos",
+          kuerzel: "", produktKlasse: "M", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: { "mk-pumpentyp": "Standard" },
+          signale: [
+            { id: "sg-dp-frei", name: "Freigabe", richtung: "A", datentyp: "Bool" },
+            { id: "sg-dp-drehzahl", name: "Drehzahl Sollwert", richtung: "A", datentyp: "Int" },
+          ],
+          kommentar: "",
+        },
+        {
+          id: "el-dos-fm", name: "Durchflussmesser", typ: "Komponente", elternId: "el-dos",
+          kuerzel: "", produktKlasse: "B", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-fm-wert", name: "Durchfluss", richtung: "E", datentyp: "Real" }],
+          kommentar: "",
+        },
+        {
+          id: "el-dos-v", name: "Dosierventil", typ: "Komponente", elternId: "el-dos",
+          kuerzel: "", produktKlasse: "Q", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: { "mk-nennweite": "DN15" },
+          signale: [
+            { id: "sg-dv-auf", name: "Öffnen", richtung: "A", datentyp: "Bool" },
+            { id: "sg-dv-offen", name: "Rückmeldung offen", richtung: "E", datentyp: "Bool" },
+          ],
+          kommentar: "",
+        },
+        // -- Verschließer -----------------------------------------------------
+        {
+          id: "el-ver", name: "Verschließer", typ: "Station", elternId: "el-abf",
+          kuerzel: "VER", produktKlasse: "", ort: "F1", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
+        },
+        {
+          id: "el-ver-m", name: "Verschließmotor", typ: "Komponente", elternId: "el-ver",
+          kuerzel: "", produktKlasse: "M", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-vm-frei", name: "Freigabe", richtung: "A", datentyp: "Bool" }],
+          kommentar: "",
+        },
+        {
+          id: "el-ver-s", name: "Deckelsensor", typ: "Komponente", elternId: "el-ver",
+          kuerzel: "", produktKlasse: "B", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-ds-da", name: "Deckel vorhanden", richtung: "E", datentyp: "Bool" }],
+          kommentar: "",
+        },
+        // -- Etikettierer (Option) --------------------------------------------
+        {
+          id: "el-eti", name: "Etikettierer", typ: "Station", elternId: "el-abf",
+          kuerzel: "ETI", produktKlasse: "", ort: "F2", verwendung: "option",
+          bedingung: [{ merkmalId: "mk-etikett", op: "=", wert: "ja" }],
+          merkmalwerte: {}, signale: [],
+          kommentar: "Nur enthalten, wenn Etikettierung bestellt ist.",
+        },
+        {
+          id: "el-eti-m", name: "Etikettiermotor", typ: "Komponente", elternId: "el-eti",
+          kuerzel: "", produktKlasse: "M", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-em-frei", name: "Freigabe", richtung: "A", datentyp: "Bool" }],
+          kommentar: "",
+        },
+        {
+          id: "el-eti-s", name: "Etikettensensor", typ: "Komponente", elternId: "el-eti",
+          kuerzel: "", produktKlasse: "B", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-es-da", name: "Etikett erkannt", richtung: "E", datentyp: "Bool" }],
+          kommentar: "",
+        },
+        // -- Steuerung ---------------------------------------------------------
+        {
+          id: "el-stg", name: "Steuerung", typ: "Station", elternId: "el-abf",
+          kuerzel: "STG", produktKlasse: "", ort: "S1", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [],
+          kommentar: "Schaltschrank.",
+        },
+        {
+          id: "el-stg-sps", name: "SPS", typ: "Komponente", elternId: "el-stg",
+          kuerzel: "", produktKlasse: "K", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
+        },
+        {
+          id: "el-stg-hs", name: "Hauptschalter", typ: "Komponente", elternId: "el-stg",
+          kuerzel: "", produktKlasse: "Q", ort: "", verwendung: "standard",
+          bedingung: [], merkmalwerte: {},
+          signale: [{ id: "sg-hs-ein", name: "Eingeschaltet", richtung: "E", datentyp: "Bool" }],
+          kommentar: "",
+        },
+      ],
+      regeln: [
+        {
+          id: "rg-pumpe", name: "Hochleistungspumpe ab 80 Takten", aktiv: true,
+          wenn: [{ merkmalId: "mk-takt", op: ">", wert: "80" }],
+          dann: [
+            { art: "wertSetzen", merkmalId: "mk-pumpentyp", wert: "Hochleistung" },
+            { art: "wertSetzen", elementId: "el-dos-p", merkmalId: "mk-pumpentyp", wert: "Hochleistung" },
+          ],
+          kommentar: "Über 80 Flaschen/min reicht die Standardpumpe nicht mehr.",
+        },
+        {
+          id: "rg-ventil", name: "Größeres Dosierventil für 1,5-l-Flaschen", aktiv: true,
+          wenn: [{ merkmalId: "mk-flasche", op: "=", wert: "1,5 l" }],
+          dann: [{ art: "wertSetzen", elementId: "el-dos-v", merkmalId: "mk-nennweite", wert: "DN25" }],
+          kommentar: "Große Flaschen brauchen mehr Durchfluss.",
+        },
+        {
+          id: "rg-ul", name: "UL-Ausführung bei 480 V", aktiv: true,
+          wenn: [{ merkmalId: "mk-spannung", op: "=", wert: "480 V / 60 Hz" }],
+          dann: [
+            { art: "wertSetzen", merkmalId: "mk-ausfuehrung", wert: "UL" },
+            { art: "meldung", stufe: "Hinweis", text: "480 V / 60 Hz gewählt: UL-konforme Komponenten einplanen." },
+          ],
+          kommentar: "US-Markt: 480 V bedeutet UL-Ausführung.",
+        },
+        {
+          id: "rg-eti-takt", name: "Etikettierer nur bis 100 Takte freigegeben", aktiv: true,
+          wenn: [
+            { merkmalId: "mk-etikett", op: "=", wert: "ja" },
+            { merkmalId: "mk-takt", op: ">", wert: "100" },
+          ],
+          dann: [{
+            art: "meldung", stufe: "Warnung",
+            text: "Der Etikettierer ist nur bis 100 Flaschen/min freigegeben – Taktleistung prüfen.",
+          }],
+          kommentar: "Technische Grenze des Etikettierers.",
+        },
+      ],
+      konfigurationen: [
+        {
+          id: "kf-basis", name: "Basis 60",
+          antworten: { "mk-takt": "60", "mk-flasche": "1,0 l", "mk-etikett": "nein", "mk-spannung": "400 V / 50 Hz" },
+          kommentar: "Einstiegsvariante ohne Etikettierer.",
+        },
+        {
+          id: "kf-premium", name: "Premium 90 mit Etikettierer",
+          antworten: { "mk-takt": "90", "mk-flasche": "1,5 l", "mk-etikett": "ja", "mk-spannung": "400 V / 50 Hz" },
+          kommentar: "Hohe Leistung, große Flaschen, mit Etikettierer.",
+        },
+        {
+          id: "kf-export", name: "Export USA 120",
+          antworten: { "mk-takt": "120", "mk-flasche": "0,5 l", "mk-etikett": "ja", "mk-spannung": "480 V / 60 Hz" },
+          kommentar: "Zeigt Hinweis (UL) und Warnung (Etikettierer über 100 Takte).",
+        },
+      ],
+    };
+  }
+
+  const api = { erzeuge };
+
+  ns.Beispiel = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+
+})(typeof window !== "undefined" ? (window.SysM = window.SysM || {}) : {});
