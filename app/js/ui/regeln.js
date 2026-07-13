@@ -1,10 +1,11 @@
 "use strict";
 /*
- * Reiter „3 · Regeln“: Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt
- * statt programmiert. Die Vorschau zeigt jede Regel als lesbaren Satz.
+ * Reiter „Regeln“ (Engineering): Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt
+ * statt programmiert. Der Simulator daneben zeigt live, welche Regel bei
+ * welchen Antworten greift – Wirkung sofort sichtbar.
  */
 (function () {
-  const { h, select, feld, textEingabe, wertEingabe, infoBox, badge, leererHinweis } = UI;
+  const { h, select, feld, textEingabe, wertEingabe, infoBox, badge, leererHinweis, grossWertEingabe } = UI;
   const Model = () => SysM.Model;
   const Regeln = () => SysM.Regeln;
 
@@ -18,33 +19,46 @@
     return regel;
   }
 
+  function testAntworten() {
+    if (!App.regelTest) App.regelTest = { antworten: {} };
+    return App.regelTest.antworten;
+  }
+
   function render(wurzel) {
     const projekt = App.projekt;
     const regel = auswahl();
 
     wurzel.append(infoBox(
       "Eine Regel ist ein Satz: „WENN Taktleistung größer 80 DANN setze Pumpentyp = Hochleistung.“ ",
-      "Regeln können Werte setzen, Optionen aufnehmen oder ausschließen und Meldungen ausgeben. ",
-      "Sie werden bei jeder Variante automatisch angewendet – in der Reihenfolge dieser Liste, die spätere Regel gewinnt."));
+      "Stellen Sie im Simulator Beispielantworten ein – der grüne Punkt zeigt sofort, welche Regeln dann greifen. ",
+      "Regeln gelten in der Reihenfolge dieser Liste, die spätere gewinnt."));
 
     if (!projekt.merkmale.length) {
-      wurzel.append(leererHinweis("Regeln prüfen Merkmale – legen Sie zuerst in Schritt 2 Merkmale an."));
+      wurzel.append(leererHinweis("Regeln prüfen Merkmale – legen Sie zuerst unter „Merkmale“ welche an."));
       return;
     }
 
+    // Live-Auswertung mit den Probier-Antworten
+    const ergebnis = Regeln().auswerten(projekt, testAntworten());
+
     const liste = h("div", { class: "baum" });
     for (const r of projekt.regeln) {
+      const feuert = r.aktiv !== false && Regeln().pruefeBedingungen(r.wenn, ergebnis.werte);
       liste.append(h("button", {
         class: "baum-zeile" + (regel && r.id === regel.id ? " ausgewaehlt" : ""),
         onclick: () => { App.auswahl.regelId = r.id; App.render(); },
       },
+        h("span", {
+          class: "punkt " + (r.aktiv === false ? "punkt-grau" : feuert ? "punkt-gruen" : "punkt-leer"),
+          title: r.aktiv === false ? "inaktiv" : feuert ? "greift bei den Probier-Antworten" : "greift gerade nicht",
+        }),
         h("span", { class: "baum-name" }, r.name),
         r.aktiv === false ? badge("inaktiv", "typ-inaktiv") : null,
       ));
     }
     if (!projekt.regeln.length) liste.append(leererHinweis("Noch keine Regeln."));
 
-    const linkerTeil = h("div", { class: "panel" },
+    const linkerTeil = h("div", { class: "panel schmal" },
       h("div", { class: "panel-kopf" },
         h("h3", {}, "Regeln"),
         h("button", {
@@ -59,14 +73,57 @@
         }, "+ Regel"),
       ),
       liste,
-      h("p", { class: "klein" }, "Reihenfolge ändern: Regel auswählen und im Detail ↑ / ↓ verwenden."),
+      h("p", { class: "klein" }, "● = greift bei den aktuellen Probier-Antworten."),
+      renderSimulator(projekt, ergebnis),
     );
 
     const container = h("div", { class: "split" });
     container.append(linkerTeil);
-    container.append(regel ? renderDetail(projekt, regel) : h("div", { class: "panel" }, leererHinweis("Keine Regel ausgewählt.")));
+    container.append(regel
+      ? renderDetail(projekt, regel, ergebnis)
+      : h("div", { class: "panel detail" }, leererHinweis("Keine Regel ausgewählt.")));
     wurzel.append(container);
   }
+
+  // ---- Simulator -------------------------------------------------------------
+
+  function renderSimulator(projekt, ergebnis) {
+    const fragen = projekt.merkmale.filter((m) => m.istKonfiguration);
+    const block = h("div", { class: "unterblock simulator" },
+      h("h4", {}, "Ausprobieren"),
+      h("p", { class: "klein" }, "Beispielantworten einstellen – Liste und Häkchen reagieren sofort. Ändert nichts am Projekt."));
+
+    if (!fragen.length) {
+      block.append(h("p", { class: "klein" }, "Noch keine Fragen definiert (unter „Merkmale“ markieren)."));
+      return block;
+    }
+
+    for (const mk of fragen) {
+      const antworten = testAntworten();
+      const wirksam = antworten[mk.id] !== undefined && antworten[mk.id] !== ""
+        ? antworten[mk.id] : mk.standardwert;
+      block.append(h("div", { class: "frage-block kompakt" },
+        h("span", { class: "frage-titel" }, mk.name + (mk.einheit ? ` (${mk.einheit})` : "")),
+        grossWertEingabe(mk, wirksam, (w) => { antworten[mk.id] = w; App.render(); }),
+      ));
+    }
+
+    // Abgeleitete Werte kurz zeigen
+    const abgeleitet = projekt.merkmale
+      .filter((m) => !m.istKonfiguration && ergebnis.werte[m.id])
+      .map((m) => `${m.name} = ${Model().merkmalWertAlsText(m, ergebnis.werte[m.id].wert)}`);
+    if (abgeleitet.length) {
+      block.append(h("p", { class: "klein" }, h("strong", {}, "Ergibt: "), abgeleitet.join(" · ")));
+    }
+    if (ergebnis.meldungen.length) {
+      block.append(h("p", { class: "klein" },
+        h("strong", {}, "Meldungen: "),
+        ergebnis.meldungen.map((m) => m.stufe + ": " + m.text).join(" · ")));
+    }
+    return block;
+  }
+
+  // ---- Detail ------------------------------------------------------------------
 
   function verschiebeRegel(projekt, regel, richtung) {
     const i = projekt.regeln.indexOf(regel);
@@ -78,7 +135,7 @@
     App.render();
   }
 
-  function renderDetail(projekt, regel) {
+  function renderDetail(projekt, regel, ergebnis) {
     const detail = h("div", { class: "panel detail" });
 
     detail.append(h("div", { class: "panel-kopf" },
@@ -99,8 +156,15 @@
       ),
     ));
 
+    const feuert = regel.aktiv !== false && Regeln().pruefeBedingungen(regel.wenn, ergebnis.werte);
     detail.append(h("div", { class: "kennzeichen-anzeige" },
-      h("strong", {}, Regeln().beschreibeRegel(regel, projekt))));
+      h("strong", {}, Regeln().beschreibeRegel(regel, projekt)),
+      h("div", { class: "klein", style: "margin-top:4px" },
+        regel.aktiv === false
+          ? "Diese Regel ist inaktiv."
+          : feuert
+            ? "✔ Greift bei den aktuellen Probier-Antworten."
+            : "Greift bei den aktuellen Probier-Antworten nicht.")));
 
     detail.append(feld("Name", textEingabe(regel.name, (w) => { regel.name = w || regel.name; App.speichern(); App.render(); })));
 
@@ -111,10 +175,18 @@
       }),
       " Regel ist aktiv"));
 
-    // WENN
+    // WENN – mit Live-Häkchen je Bedingung
     const wennBlock = h("div", { class: "unterblock" },
       h("h4", {}, "WENN"),
-      h("p", { class: "klein" }, "Alle Bedingungen müssen erfüllt sein (UND). Ohne Bedingung gilt die Regel immer."));
+      h("p", { class: "klein" }, "Alle Bedingungen müssen erfüllt sein (UND). Ohne Bedingung gilt die Regel immer. ✓/✕ zeigt den Stand mit den Probier-Antworten."));
+    regel.wenn.forEach((bed) => {
+      const erfuellt = Regeln().pruefeBedingung(bed, ergebnis.werte);
+      const eintrag = ergebnis.werte[bed.merkmalId];
+      const mk = Model().findeMerkmal(projekt, bed.merkmalId);
+      wennBlock.append(h("div", { class: "bedingung-status " + (erfuellt ? "erfuellt" : "nicht-erfuellt") },
+        (erfuellt ? "✓ " : "✕ ") + Regeln().beschreibeBedingung(bed, projekt) +
+        (eintrag && mk ? ` (aktuell: ${Model().merkmalWertAlsText(mk, eintrag.wert)})` : " (aktuell: kein Wert)")));
+    });
     wennBlock.append(Tabs.struktur.renderBedingungsZeilen(projekt, regel.wenn, () => { App.speichern(); App.render(); }));
     detail.append(wennBlock);
 
@@ -143,7 +215,7 @@
   function elementOptionen(projekt) {
     return Model().elementeInBaumfolge(projekt).map(({ el, tiefe }) => ({
       wert: el.id,
-      text: " ".repeat(tiefe * 3) + el.name + (el.verwendung === "option" ? " (Option)" : ""),
+      text: " ".repeat(tiefe * 3) + el.name + (el.verwendung === "option" ? " (Option)" : ""),
     }));
   }
 
@@ -196,5 +268,5 @@
     return zeile;
   }
 
-  Tabs.regeln = { titel: "3 · Regeln", render };
+  Tabs.regeln = { titel: "Regeln", render };
 })();

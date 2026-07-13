@@ -82,6 +82,8 @@
       typ: "text",          // zahl | text | jaNein | auswahl
       einheit: "",
       werte: [],            // nur bei auswahl
+      min: "",              // nur bei zahl (optional): sinnvoller Bereich für Regler
+      max: "",
       istKonfiguration: false, // wird beim Konfigurieren einer Variante abgefragt
       standardwert: "",
       irdi: "",             // optional: stabiler Bezeichner, z. B. ECLASS-IRDI
@@ -103,7 +105,8 @@
   function neueKonfiguration(vorgabe) {
     return Object.assign({
       id: neueId("kf"),
-      name: "Neue Konfiguration",
+      name: "Neue Anfrage",
+      kunde: "",            // wer fragt an? (Vertriebssicht)
       antworten: {},        // { merkmalId: wert }
       kommentar: "",
     }, vorgabe || {});
@@ -127,6 +130,7 @@
       merkmale: [],
       regeln: [],
       konfigurationen: [],
+      prozess: [],        // [{id, name, beschreibung, funktionen: [{id, funktionId, loesungId}]}]
       kennzeichnung: {
         trennerFunktion: ".",
         plcAdressenAutomatisch: true,
@@ -210,6 +214,45 @@
     }
     projekt.elemente = projekt.elemente.filter((e) => !zuEntfernen.has(e.id));
     return zuEntfernen.size;
+  }
+
+  /** Eindeutiger Name unter Geschwistern: „Motor“, „Motor 2“, „Motor 3“ … */
+  function eindeutigerName(projekt, elternId, basis) {
+    const geschwister = kinder(projekt, elternId).map((e) => e.name);
+    if (!geschwister.includes(basis)) return basis;
+    let nummer = 2;
+    while (geschwister.includes(basis + " " + nummer)) nummer += 1;
+    return basis + " " + nummer;
+  }
+
+  /**
+   * Kopiert ein Element samt Unterbaum (neue IDs), fügt die Kopie direkt
+   * hinter dem Original ein. Liefert das kopierte Wurzelelement.
+   */
+  function kopiereUnterbaum(projekt, id) {
+    const original = findeElement(projekt, id);
+    if (!original) return null;
+    const teil = [original].concat(
+      projekt.elemente.filter((e) => e.id !== id && istNachfahre(projekt, id, e.id)));
+    const idAbbildung = new Map();
+    const kopien = teil.map((e) => {
+      const kopie = JSON.parse(JSON.stringify(e));
+      kopie.id = neueId("el");
+      idAbbildung.set(e.id, kopie.id);
+      kopie.signale = (kopie.signale || []).map((s) => Object.assign({}, s, { id: neueId("sg") }));
+      return kopie;
+    });
+    for (const kopie of kopien) {
+      if (idAbbildung.has(kopie.elternId)) kopie.elternId = idAbbildung.get(kopie.elternId);
+    }
+    kopien[0].name = eindeutigerName(projekt, original.elternId, original.name);
+    // Hinter dem letzten Element des Original-Unterbaums einfügen.
+    let einfuegeIndex = projekt.elemente.indexOf(original) + 1;
+    for (let i = einfuegeIndex; i < projekt.elemente.length; i += 1) {
+      if (istNachfahre(projekt, id, projekt.elemente[i].id)) einfuegeIndex = i + 1;
+    }
+    projekt.elemente.splice(einfuegeIndex, 0, ...kopien);
+    return kopien[0];
   }
 
   /** Verschiebt ein Element innerhalb seiner Geschwister um +1/-1 Position. */
@@ -320,6 +363,7 @@
       merkmale: (daten.merkmale || []).map((m) => neuesMerkmal(m)),
       regeln: (daten.regeln || []).map((r) => neueRegel(r)),
       konfigurationen: (daten.konfigurationen || []).map((k) => neueKonfiguration(k)),
+      prozess: (daten.prozess || []).map((s) => Object.assign({ id: neueId("ps"), name: "Schritt", beschreibung: "", funktionen: [] }, s)),
       kennzeichnung: Object.assign({ trennerFunktion: ".", plcAdressenAutomatisch: true }, daten.kennzeichnung || {}),
     };
     return projekt;
@@ -349,6 +393,8 @@
     istNachfahre,
     entferneElement,
     verschiebeElement,
+    eindeutigerName,
+    kopiereUnterbaum,
     merkmalWertAlsText,
     validieren,
     pruefeProjekt,

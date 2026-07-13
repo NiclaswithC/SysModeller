@@ -16,6 +16,63 @@ Sprache (Station, Baugruppe, BMK, Option), verlangt keine Methodenschulung und
 erklärt jeden Schritt in einem Satz. Priorität hat Nachvollziehbarkeit und
 Konsistenz, nicht Funktionsumfang.
 
+## Orientierung am realen Prozess
+
+Das Werkzeug ist nicht nach seinen Funktionen gegliedert, sondern nach dem Weg
+eines Auftrags durch ein Maschinenbau-Unternehmen – mit den Informationen, die
+an jeder Station tatsächlich fließen:
+
+| Prozessschritt | Wer | Information heute (typisch) | Im Werkzeug |
+|---|---|---|---|
+| Anfrage | Vertrieb | Lastenheft, Excel-Checkliste, Rückfragen per Mail ans Engineering | Prozess des Kunden als Schritte modellieren; je Schritt Funktion und Lösungsprinzip wählen; Kundenanfrage als beantwortete Fragen; Machbarkeit sofort gegen die hinterlegten Engineering-Regeln geprüft |
+| Angebot | Vertrieb → Kunde | Word/PDF, von Hand aus alten Angeboten kopiert | **Angebotsmappe** per Klick: Maschinenbild, Lieferumfang, technische Daten, Hinweise – erzeugt, nicht abgeschrieben |
+| Auftrag → Engineering | Vertrieb → Mechanik/Elektrik/Software | Excel-Listen je Gewerk, jede Disziplin erfasst neu | dieselbe Konfiguration liefert jedem Gewerk seine Projektion: Strukturliste, BMK-Liste, PLC-Tags, Merkmalliste |
+| Standardpflege | Engineering | „Standard“ = Ordner mit alten Projekten | **Bibliothek**: Module einmal definiert, versioniert, Abweichungs-Prüfung je Instanz; Erfahrungen als Regeln mit Begründung |
+| Service | Service | As-Built verstreut in Doku und Köpfen | Maschinenbild + Kennzeichen + Merkmale je ausgelieferter Konfiguration im Modell |
+
+### Vom Kundenprozess zur Maschine (RFLP-Gedanke, ohne den Namen zu benutzen)
+
+Der Vertriebseinstieg folgt der Kaskade des Systems Engineering – in der Sprache
+des Maschinenbauers:
+
+| Ebene (RFLP) | Im Werkzeug | Beispiel |
+|---|---|---|
+| Requirements | Prozessschritte des Kunden | „Zuführen → Fügen → Prüfen“ |
+| Functional | Funktion je Schritt (Funktionskatalog) | „Spannen“ |
+| Logical | Lösungsprinzip je Funktion | „Pneumatisch / Hydraulisch / Elektrisch spannen“ |
+| Physical | Firmenstandard-Modul mit Vorzugskomponenten und Parametern – oder ETO-Hülle | „Spanneinheit pneumatisch v1“ |
+
+„Maschine aufbauen“ erzeugt daraus die Struktur: je Prozessschritt eine Station
+in Prozessreihenfolge, darin je gewählter Lösung die Modulinstanz (CTO – sofort
+parametrierbar, Vorzugskomponenten inklusive, anpassbar mit Abweichungs-Prüfung)
+bzw. eine **ETO-Hülle**, wo es noch keinen Standard gibt. Der Abgleich ist
+schonend: von Hand ergänzte Elemente bleiben stehen. Jedes generierte Element
+kennt seine Herkunft (Schritt/Funktion/Lösung) – Rückverfolgbarkeit von der
+Kundenanforderung bis zum Betriebsmittel. ETO-Anteile werden im Angebot und in
+der Angebotsmappe ausgewiesen (Aufwand!) und wandern nach Bewährung als neue
+Standards in die Bibliothek – so wird aus ETO über die Zeit CTO.
+
+Beide Einstiege bleiben möglich: **nach Prozess** (beratungsintensiv, wie oben)
+oder **nach Produktpalette** (Serienmaschinenbau: Struktur steht, es wird nur
+konfiguriert und parametriert).
+
+### Die vier Kernprobleme und ihre Antwort im Werkzeug
+
+1. **Komplexität** wird geteilt statt gestemmt: Module (Bibliothek/Baukasten) kapseln
+   Detailwissen; die Zusammensetzung übernimmt die Regel-Engine; die Prüfung meldet
+   Konflikte. Niemand braucht das Ganze im Kopf.
+2. **Kommunikation:** eine Datenquelle, viele erzeugte Sichten. Was heute als Excel
+   per Mail kursiert (Angebotsblatt, BMK-Liste, Tag-Liste), ist hier eine Projektion
+   desselben Modells – Änderungen werden neu berechnet statt nachgepflegt.
+3. **Wiederverwendung:** „Conveyor Typ A“ ist genau ein Bibliotheksmodul mit dem
+   Schnitt aller Disziplinen (Struktur, Produktklassen, Signale, Merkmale). Instanzen
+   tragen ihre Herkunft (`herkunft: {modulId, version}`); der Abweichungs-Check macht
+   sichtbar, wo ein Projekt vom Standard abgewichen ist – gewollt (→ neue Version
+   veröffentlichen) oder ungewollt (→ zurückbauen).
+4. **Wissenssicherung:** Regeln sind ausformulierte Erfahrung („Über 80 Takte reicht
+   die Standardpumpe nicht“) mit Pflichtfeld-Charakter für das Warum. Sie wirken in
+   jedem Angebot automatisch und bleiben nachvollziehbar, wenn ihr Autor geht.
+
 ## Antworten auf die Leitfragen
 
 ### 1. Wie kapselt man formale Systemmodellierung für Nicht-Methodiker?
@@ -107,7 +164,8 @@ Ex-/Importer gegen dieses JSON, ohne Änderung am Modell selbst.
 | Offener Punkt | Entscheidung | Begründung |
 |---|---|---|
 | Technologie-Stack | Reines HTML/CSS/JS, keine Abhängigkeiten, kein Server | „Datei öffnen, läuft“ – niedrigste denkbare Hürde; IT-Freigabe unkritisch; Kernlogik trotzdem separat testbar |
-| UI-Paradigma | Sechs nummerierte Reiter = Arbeitsfolge | Der Werkzeugzweck ist an der Navigation ablesbar; kein Menü-Lernen |
+| UI-Paradigma | Sechs nummerierte Reiter = Arbeitsfolge; interaktives Maschinenbild als Hauptansicht; Baukasten statt leerer Formulare; Schalter/Regler statt Textfeldern | Der Werkzeugzweck ist an der Navigation ablesbar; Maschinenbauer denken räumlich – die Maschine wird zusammengesetzt, nicht eingetragen |
+| Maschinenbild | Isometrische Blockansicht, rein aus der Struktur berechnet (kein CAD) | Räumliche Wiedererkennung für Vertrieb/Engineering/Service ohne Geometriedaten; später können CAD-Hüllen (JT/STEP) je Element angehängt werden, ohne das Modell zu ändern |
 | Datenhaltung | Browser-Speicher + eine JSON-Datei pro Projekt | Datei-Metapher, die jeder kennt (ablegen, mailen, versionieren) |
 | Umfang der Regelsprache | Nur UND-verknüpfte Vergleiche und vier Aktionsarten | Klein genug, um jede Regel als deutschen Satz anzuzeigen; deckt Wertableitung, Optionswahl und Prüfung ab |
 | Grad der Automatisierung | Berechnen ja, stillschweigend entscheiden nein | Kennzeichen/Adressen/Varianten werden automatisch erzeugt, aber Konflikte und Widersprüche immer gemeldet |

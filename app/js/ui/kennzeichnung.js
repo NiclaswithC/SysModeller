@@ -1,6 +1,6 @@
 "use strict";
 /*
- * Reiter „5 · Kennzeichnung“: zeigt die automatisch berechneten
+ * Reiter „Kennzeichnung“ (Übergabe): zeigt die automatisch berechneten
  * Betriebsmittelkennzeichen (BMK) und PLC-Tags – wahlweise für die
  * Maximalstruktur oder eine konkrete Konfiguration.
  */
@@ -60,6 +60,20 @@
 
     for (const k of konflikte) wurzel.append(meldungBox(k.stufe, k.text));
 
+    // Maschinenbild mit eingeblendeten Kennzeichen
+    const bildPanel = h("div", { class: "panel" }, h("h3", {}, "Kennzeichen am Maschinenbild"));
+    bildPanel.append(Maschinenbild.render(projekt, {
+      status: ergebnis ? ergebnis.elementStatus : null,
+      kennzeichen,
+      zeigeBmk: true,
+      maxHoehe: 320,
+      onKlick: (el) => {
+        if (el) { App.auswahl.elementId = el.id; App.zeigeTab("struktur"); }
+      },
+    }));
+    bildPanel.append(h("p", { class: "klein" }, "Jede Komponente trägt ihr Kennzeichen. Klick auf einen Block führt zur Struktur."));
+    wurzel.append(bildPanel);
+
     // BMK-Tabelle
     const bmkPanel = h("div", { class: "panel" }, h("h3", {}, "Betriebsmittelkennzeichen (BMK)"));
     const bmkTabelle = h("table", { class: "tabelle" },
@@ -89,7 +103,7 @@
     const tagPanel = h("div", { class: "panel" },
       h("h3", {}, "PLC-Tags" + (ergebnis ? " (nur enthaltene Komponenten)" : " (Maximalstruktur)")));
     if (!tags.length) {
-      tagPanel.append(leererHinweis("Keine Signale vorhanden. Signale werden in Schritt 1 an den Komponenten gepflegt."));
+      tagPanel.append(leererHinweis("Keine Signale vorhanden. Signale werden in der Struktur an den Komponenten gepflegt."));
     } else {
       const tagTabelle = h("table", { class: "tabelle" },
         h("thead", {}, h("tr", {},
@@ -112,5 +126,5 @@
     wurzel.append(tagPanel);
   }
 
-  Tabs.kennzeichnung = { titel: "5 · Kennzeichnung", render };
+  Tabs.kennzeichnung = { titel: "Kennzeichnung", render };
 })();

@@ -9,6 +9,9 @@ const Kennzeichnung = require("../app/js/core/labeling.js");
 const Sysml = require("../app/js/core/sysml.js");
 const Exporte = require("../app/js/core/exporte.js");
 const Beispiel = require("../app/js/core/beispiel.js");
+const Vorlagen = require("../app/js/core/vorlagen.js");
+const Bibliothek = require("../app/js/core/bibliothek.js");
+const Prozess = require("../app/js/core/prozess.js");
 
 let ok = 0;
 let fehler = 0;
@@ -56,6 +59,201 @@ console.log("Modell …");
   const folge = Model.elementeInBaumfolge(projekt).map((e) => e.el.name);
   gleich(folge.join(","), "A,S2,S1", "Baumfolge nach Verschieben");
   pruefe(!Model.verschiebeElement(projekt, s2.id, -1), "Verschieben über den Anfang hinaus abgelehnt");
+}
+
+// ---- Baukasten & Duplizieren ------------------------------------------------
+console.log("Baukasten …");
+{
+  const projekt = Model.neuesProjekt("B");
+  const wurzelId = projekt.elemente[0].id;
+
+  // Baugruppen-Vorlage bringt Komponenten samt Signalen mit.
+  const band = Vorlagen.instanziiere(projekt, "bg-foerderband", wurzelId);
+  gleich(band.typ, "Baugruppe", "Vorlage: Förderband ist eine Baugruppe");
+  gleich(band.kuerzel, "TRB", "Vorlage: Kürzel voreingestellt");
+  const kinder = Model.kinder(projekt, band.id);
+  gleich(kinder.length, 2, "Vorlage: Komponenten kommen mit");
+  pruefe(kinder[0].signale.length > 0 && kinder[0].signale[0].id, "Vorlage: Signale mit eigenen IDs");
+  gleich(kinder[0].produktKlasse, "M", "Vorlage: Produktklasse gesetzt");
+
+  // Namen werden unter Geschwistern automatisch nummeriert.
+  const band2 = Vorlagen.instanziiere(projekt, "bg-foerderband", wurzelId);
+  gleich(band2.name, "Förderband 2", "Vorlage: Namen werden nummeriert");
+
+  // Unbekannte Vorlage liefert null.
+  gleich(Vorlagen.instanziiere(projekt, "gibt-es-nicht", wurzelId), null, "Unbekannte Vorlage abgelehnt");
+
+  // Duplizieren kopiert den Unterbaum mit neuen IDs direkt hinter das Original.
+  const anzahlVorher = projekt.elemente.length;
+  const kopie = Model.kopiereUnterbaum(projekt, band.id);
+  gleich(projekt.elemente.length, anzahlVorher + 3, "Duplizieren: drei neue Elemente");
+  gleich(kopie.name, "Förderband 3", "Duplizieren: Name nummeriert");
+  pruefe(kopie.id !== band.id, "Duplizieren: neue ID");
+  const kopieKinder = Model.kinder(projekt, kopie.id);
+  gleich(kopieKinder.length, 2, "Duplizieren: Kinder mitkopiert");
+  pruefe(kopieKinder[0].signale[0].id !== kinder[0].signale[0].id, "Duplizieren: neue Signal-IDs");
+  gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Duplizieren: Modell bleibt gültig");
+}
+
+// ---- Firmenstandard-Bibliothek ----------------------------------------------
+console.log("Bibliothek …");
+{
+  const projekt = Beispiel.erzeuge();
+
+  // Veröffentlichen: Schnappschuss des Transportbands (nutzt keine Merkmale).
+  const modul = Bibliothek.schnappschuss(projekt, "el-trb", {
+    name: "Transportband Standard", version: 1, beschreibung: "Test", stand: "01.01.2026",
+  });
+  gleich(modul.wurzel.name, "Transportband Standard", "Schnappschuss: Modulname am Wurzelknoten");
+  gleich(modul.wurzel.kinder.length, 2, "Schnappschuss: Kinder enthalten");
+  gleich(modul.wurzel.kinder[0].signale.length, 2, "Schnappschuss: Signale enthalten");
+
+  // Schnappschuss mit Merkmalen: Dosierstation trägt Werte für Pumpentyp/Nennweite.
+  const dosModul = Bibliothek.schnappschuss(projekt, "el-dos", { name: "Dosierstation Standard", version: 1 });
+  pruefe(dosModul.merkmale.some((m) => m.name === "Pumpentyp"), "Schnappschuss: verwendete Merkmale eingesammelt");
+
+  // Einfügen in ein LEERES Projekt: Merkmale werden angelegt, Werte verdrahtet.
+  const ziel = Model.neuesProjekt("Neu");
+  const instanz = Bibliothek.einfuegen(ziel, dosModul, ziel.elemente[0].id);
+  pruefe(instanz.herkunft && instanz.herkunft.modulId === dosModul.id, "Einfügen: Herkunft vermerkt");
+  pruefe(ziel.merkmale.some((m) => m.name === "Pumpentyp"), "Einfügen: fehlendes Merkmal angelegt");
+  const pumpe = ziel.elemente.find((e) => e.name === "Dosierpumpe");
+  const pumpentyp = ziel.merkmale.find((m) => m.name === "Pumpentyp");
+  gleich(pumpe.merkmalwerte[pumpentyp.id], "Standard", "Einfügen: Merkmalwert über Namen verdrahtet");
+  gleich(Model.validieren(ziel).filter((b) => b.stufe === "Fehler").length, 0, "Einfügen: Zielprojekt gültig");
+
+  // Zweites Einfügen: Merkmal wird wiedererkannt, nicht doppelt angelegt.
+  const anzahlMerkmale = ziel.merkmale.length;
+  Bibliothek.einfuegen(ziel, dosModul, ziel.elemente[0].id);
+  gleich(ziel.merkmale.length, anzahlMerkmale, "Einfügen: Merkmale nicht doppelt");
+
+  // Abweichungs-Prüfung: frisch eingefügt = Standard; nach Änderung = Abweichung.
+  const gleichPruefung = Bibliothek.vergleiche(ziel, instanz.id, dosModul);
+  pruefe(gleichPruefung.gleich, "Vergleich: frische Instanz entspricht dem Standard");
+  pumpe.signale.push(Model.neuesSignal({ name: "Extra", richtung: "E", datentyp: "Bool" }));
+  const abweichung = Bibliothek.vergleiche(ziel, instanz.id, dosModul);
+  pruefe(!abweichung.gleich, "Vergleich: Änderung wird erkannt");
+  pruefe(abweichung.unterschiede.some((u) => u.includes("Signale")), "Vergleich: Unterschied benennt Signale");
+
+  // Instanzname darf abweichen (Nummerierung).
+  instanz.name = "Dosierstation Standard 7";
+  pumpe.signale.pop();
+  pruefe(Bibliothek.vergleiche(ziel, instanz.id, dosModul).gleich, "Vergleich: Wurzelname wird ignoriert");
+
+  // Merkmal-Wiedererkennung über IRDI: gleicher IRDI, anderer Name.
+  const irdiModul = Bibliothek.schnappschuss(projekt, "el-dos", { name: "IRDI-Test", version: 1 });
+  const irdiZiel = Model.neuesProjekt("I");
+  irdiZiel.merkmale.push(Model.neuesMerkmal({ name: "Ganz anderer Name", typ: "zahl", irdi: "0173-1#02-AAE916#005" }));
+  // Taktleistung kommt in der Dosierstation nicht vor – erweitere um Bedingung mit Taktleistung:
+  gleich(irdiModul.merkmale.some((m) => m.irdi === "0173-1#02-AAE916#005"), false, "(Dosiermodul nutzt Taktleistung nicht)");
+
+  // Neueste Versionen je Name.
+  const versionen = Bibliothek.neuesteVersionen([
+    { id: "a", name: "X", version: 1 }, { id: "b", name: "X", version: 3 }, { id: "c", name: "Y", version: 1 },
+  ]);
+  gleich(versionen.length, 2, "Neueste Versionen: je Name eine");
+  gleich(versionen.find((m) => m.name === "X").version, 3, "Neueste Versionen: höchste gewinnt");
+
+  // Startbestand
+  const start = Bibliothek.beispielBibliothek("01.01.2026");
+  gleich(start.module.length, 4, "Beispielbibliothek: vier Module");
+  pruefe(start.module.every((m) => m.wurzel.kinder.length > 0), "Beispielbibliothek: Module mit Inhalt");
+  pruefe(start.funktionen.some((f) => f.name === "Spannen"), "Beispielbibliothek: Funktion Spannen");
+  const spannLoesungen = Bibliothek.loesungenZuFunktion(start, "fn-spannen");
+  gleich(spannLoesungen.length, 3, "Beispielbibliothek: drei Lösungsprinzipien für Spannen");
+  pruefe(Bibliothek.modulZuLoesung(start, Bibliothek.findeLoesung(start, "ls-spann-pneu")) !== null,
+    "Beispielbibliothek: Pneumatisch spannen ist CTO");
+  gleich(Bibliothek.modulZuLoesung(start, Bibliothek.findeLoesung(start, "ls-spann-hydr")), null,
+    "Beispielbibliothek: Hydraulisch spannen ist ETO");
+}
+
+// ---- Prozess -> Struktur ------------------------------------------------------
+console.log("Prozess …");
+{
+  const bibliothek = Bibliothek.beispielBibliothek("01.01.2026");
+  const projekt = Model.neuesProjekt("Montagezelle");
+
+  // Prozess: Zuführen (Band, CTO) -> Spannen (pneumatisch CTO + hydraulisch ETO getrennt testen)
+  const s1 = Prozess.neuerSchritt({ name: "Zuführen" });
+  s1.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-zufuehren", loesungId: "ls-band" }));
+  const s2 = Prozess.neuerSchritt({ name: "Fügen" });
+  s2.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-spannen", loesungId: "ls-spann-hydr" }));
+  projekt.prozess.push(s1, s2);
+
+  let bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  pruefe(bericht.length >= 4, "Erzeugen: Bericht beschreibt die Schritte");
+
+  const wurzel = projekt.elemente.find((e) => !e.elternId);
+  const stationen = Model.kinder(projekt, wurzel.id);
+  gleich(stationen.length, 2, "Erzeugen: je Prozessschritt eine Station");
+  gleich(stationen[0].name, "Zuführen", "Erzeugen: Stationsreihenfolge = Prozessreihenfolge");
+  gleich(stationen[1].name, "Fügen", "Erzeugen: zweite Station");
+
+  const band = Model.kinder(projekt, stationen[0].id)[0];
+  pruefe(band && band.herkunft && band.herkunft.name === "Förderband Typ A", "Erzeugen: CTO-Modul instanziiert");
+  gleich(band.herkunftFunktion.funktionName, "Zuführen", "Erzeugen: Rückverfolgung zur Funktion");
+  pruefe(Model.kinder(projekt, band.id).length === 2, "Erzeugen: Vorzugskomponenten enthalten");
+
+  const huelle = Model.kinder(projekt, stationen[1].id)[0];
+  pruefe(huelle && huelle.eto === true, "Erzeugen: ETO-Lösung wird zur Hülle");
+  gleich(huelle.name, "Hydraulisch spannen", "Erzeugen: Hülle trägt den Lösungsnamen");
+  gleich(Prozess.etoElemente(projekt, null).length, 1, "Erzeugen: ETO-Liste findet die Hülle");
+
+  // Lösung wechseln: hydraulisch -> pneumatisch (CTO) ersetzt die Hülle.
+  s2.funktionen[0].loesungId = "ls-spann-pneu";
+  bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  const neu = Model.kinder(projekt, stationen[1].id).filter((k) => k.generiert);
+  gleich(neu.length, 1, "Wechsel: genau eine generierte Lösung in der Station");
+  pruefe(neu[0].herkunft && neu[0].herkunft.name === "Spanneinheit pneumatisch", "Wechsel: neue Lösung ist das CTO-Modul");
+  gleich(Prozess.etoElemente(projekt, null).length, 0, "Wechsel: keine ETO-Hülle mehr");
+
+  // Von Hand ergänztes Element bleibt beim Aktualisieren stehen.
+  const manuell = Model.neuesElement({ name: "Zusatzsensor", typ: "Komponente", elternId: stationen[1].id, produktKlasse: "B" });
+  projekt.elemente.push(manuell);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  pruefe(Model.findeElement(projekt, manuell.id) !== null, "Aktualisieren: Handarbeit bleibt erhalten");
+
+  // Idempotenz: ohne Änderung passiert nichts.
+  const anzahl = projekt.elemente.length;
+  bericht = Prozess.erzeugeStruktur(projekt, bibliothek);
+  gleich(projekt.elemente.length, anzahl, "Aktualisieren: idempotent ohne Änderungen");
+  pruefe(bericht.some((z) => z.includes("bereits auf dem Stand")), "Aktualisieren: Bericht meldet keinen Änderungsbedarf");
+
+  // Schritt löschen entfernt die generierte Station (Handarbeit darunter geht mit – bewusst).
+  projekt.prozess = projekt.prozess.filter((s) => s.id !== s1.id);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  gleich(Model.kinder(projekt, wurzel.id).length, 1, "Schritt gelöscht: Station entfernt");
+
+  // Neue Schritte werden in Prozessfolge VOR handangelegte Stationen sortiert.
+  const s0 = Prozess.neuerSchritt({ name: "Vorbereiten" });
+  projekt.prozess.unshift(s0);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+  const folge = Model.kinder(projekt, wurzel.id).map((e) => e.name);
+  gleich(folge[0], "Vorbereiten", "Reihenfolge: neuer erster Schritt steht vorn");
+
+  gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Prozess: Projekt bleibt gültig");
+
+  // Kennzeichen bleiben auf der generierten Struktur berechenbar.
+  const kz = Kennzeichnung.berechneKennzeichen(projekt);
+  pruefe(Object.values(kz).length > 0, "Prozess: Kennzeichen berechenbar");
+}
+
+{
+  // IRDI-Wiedererkennung: Modul mit Merkmal (per Bedingung) trifft auf Projekt
+  // mit gleichem IRDI unter anderem Namen -> kein Duplikat, Bedingung verdrahtet.
+  const quelle = Beispiel.erzeuge();
+  const modul = Bibliothek.schnappschuss(quelle, "el-eti", { name: "Etikettierer Standard", version: 1 });
+  pruefe(modul.merkmale.some((m) => m.name === "Etikettierung"), "Options-Modul: Bedingungs-Merkmal eingesammelt");
+
+  const ziel = Model.neuesProjekt("Z");
+  const vorhanden = Model.neuesMerkmal({ name: "Labeling", typ: "jaNein", irdi: "", standardwert: "nein" });
+  ziel.merkmale.push(vorhanden);
+  const instanz = Bibliothek.einfuegen(ziel, modul, ziel.elemente[0].id);
+  const etikettierung = ziel.merkmale.find((m) => m.name === "Etikettierung");
+  pruefe(!!etikettierung, "Options-Modul: Merkmal per Name angelegt (kein IRDI-Treffer)");
+  gleich(instanz.bedingung[0].merkmalId, etikettierung.id, "Options-Modul: Bedingung auf Projekt-Merkmal verdrahtet");
+  const ergebnis = Regeln.auswerten(ziel, { [etikettierung.id]: "ja" });
+  gleich(ergebnis.elementStatus[instanz.id].effektivEnthalten, true, "Options-Modul: Option funktioniert im Zielprojekt");
 }
 
 // ---- Regel-Engine ----------------------------------------------------------

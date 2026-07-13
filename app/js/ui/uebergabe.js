@@ -1,6 +1,6 @@
 "use strict";
 /*
- * Reiter „6 · Übergabe“: alle Exporte aus demselben neutralen Datenmodell.
+ * Reiter „Übergabedaten“: alle Exporte aus demselben neutralen Datenmodell.
  */
 (function () {
   const { h, select, infoBox } = UI;
@@ -79,5 +79,5 @@
       "der vorgesehene Andockpunkt – siehe docs/datenmodell.md im Projektordner."));
   }
 
-  Tabs.uebergabe = { titel: "6 · Übergabe", render };
+  Tabs.uebergabe = { titel: "Übergabedaten", render };
 })();
