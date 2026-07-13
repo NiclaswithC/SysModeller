@@ -31,10 +31,10 @@ node tests/run-tests.js
 
 | Schritt | Reiter | Inhalt |
 |---|---|---|
-| 1 | **Struktur** | Anlagengliederung als Baum (Anlage → Teilanlage → Station → Baugruppe → Komponente), Optionen mit Bedingung, Signale an Komponenten |
+| 1 | **Struktur** | Maschine aus dem **Baukasten** zusammensetzen (vorkonfigurierte Stationen, Baugruppen, Komponenten – per Klick oder Drag & Drop) – das interaktive **Maschinenbild** (isometrische 3D-Blockansicht) ist die Hauptansicht |
 | 2 | **Merkmale** | Merkmal-Katalog: Definition getrennt vom Wert, optional mit stabilem Bezeichner (IRDI) |
-| 3 | **Regeln** | Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt statt programmiert |
-| 4 | **Varianten** | Fragen beantworten → Regeln bestimmen Umfang und Werte, mit Begründungsprotokoll |
+| 3 | **Regeln** | Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt statt programmiert – mit **Live-Simulator** (welche Regel greift wann?) |
+| 4 | **Varianten** | Fragen mit Schaltern, Reglern und Schaltflächen beantworten → das Maschinenbild zeigt sofort, welche Bausteine die Variante bekommt |
 | 5 | **Kennzeichnung** | BMK (=, +, −) und PLC-Tags mit Adressen – deterministisch aus der Struktur berechnet |
 | 6 | **Übergabe** | Strukturliste, Merkmalliste, BMK-Liste, PLC-Tag-Tabelle (TIA-Aufbau), neutrales JSON, SysML |
 
@@ -44,6 +44,11 @@ So bleibt ein einziges Modell über mehrere Reifegrade tragfähig.
 
 ## Leitideen
 
+- **Räumlich denken:** Das interaktive Maschinenbild (isometrische Blockansicht, ohne CAD-Daten
+  berechnet) begleitet alle Schritte – Vertrieb zeigt Varianten daran, Engineering baut daran,
+  Service findet Komponenten samt Kennzeichen darin wieder.
+- **Bausteine statt Formulare:** Der Baukasten liefert vorkonfigurierte Stationen, Baugruppen und
+  Komponenten mit Kürzel, Produktklasse und typischen Signalen – einfügen per Klick oder Drag & Drop.
 - **Maximalstruktur (150 %-Modell):** Die Anlage wird einmal mit allen Optionen beschrieben.
   Eine Variante ist nur die Antwort auf wenige Fragen – alles Weitere leiten Regeln ab.
 - **Deterministische Kennzeichnung:** BMK und PLC-Tags werden vollständig aus der Struktur

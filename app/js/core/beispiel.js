@@ -23,6 +23,7 @@
       merkmale: [
         {
           id: "mk-takt", name: "Taktleistung", typ: "zahl", einheit: "1/min", werte: [],
+          min: "20", max: "150",
           istKonfiguration: true, standardwert: "60",
           irdi: "0173-1#02-AAE916#005",
           kommentar: "Wie viele Flaschen pro Minute soll die Anlage abfüllen? (IRDI nur beispielhaft)",

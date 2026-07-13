@@ -1,21 +1,16 @@
 "use strict";
 /*
- * Reiter „1 · Struktur“: Anlagengliederung als Baum, rechts die Angaben
- * zum ausgewählten Element. Hier werden auch Merkmalwerte, Signale und
- * die Options-Bedingung eines Elements gepflegt.
+ * Reiter „1 · Struktur“: Die Maschine wird aus dem Baukasten zusammengesetzt –
+ * per Klick oder indem man Bausteine direkt auf das Maschinenbild zieht.
+ * Das Bild ist die Hauptansicht; eine Listenansicht steht daneben bereit.
  */
 (function () {
-  const { h, select, feld, textEingabe, wertEingabe, infoBox, badge, leererHinweis } = UI;
+  const { h, select, feld, textEingabe, wertEingabe, infoBox, badge, leererHinweis, segmente } = UI;
   const Model = () => SysM.Model;
 
   const TYP_KLASSE = {
     Anlage: "typ-anlage", Teilanlage: "typ-teilanlage", Station: "typ-station",
     Baugruppe: "typ-baugruppe", Komponente: "typ-komponente",
-  };
-
-  const KIND_TYP_VORSCHLAG = {
-    Anlage: "Station", Teilanlage: "Station", Station: "Komponente",
-    Baugruppe: "Komponente", Komponente: "Komponente",
   };
 
   function auswahl() {
@@ -28,26 +23,95 @@
     return el;
   }
 
+  /** Passendes Elternteil für einen neuen Baustein bestimmen. */
+  function zielEltern(projekt, vorlage, wunschEl) {
+    const wurzel = projekt.elemente.find((e) => !e.elternId) || null;
+    if (vorlage.typ === "Station" || vorlage.typ === "Teilanlage") {
+      // Stationen kommen auf die Linie, außer man legt sie gezielt auf eine Teilanlage.
+      if (wunschEl && (wunschEl.typ === "Anlage" || wunschEl.typ === "Teilanlage")) return wunschEl;
+      return wurzel;
+    }
+    let el = wunschEl || auswahl();
+    while (el && el.typ === "Komponente") el = Model().findeElement(projekt, el.elternId);
+    return el || wurzel;
+  }
+
+  function bausteinEinfuegen(vorlageId, wunschEl) {
+    const projekt = App.projekt;
+    const vorlage = SysM.Vorlagen.finde(vorlageId);
+    if (!vorlage) return;
+    const eltern = zielEltern(projekt, vorlage, wunschEl);
+    const neu = SysM.Vorlagen.instanziiere(projekt, vorlageId, eltern ? eltern.id : null);
+    if (neu) {
+      App.auswahl.elementId = neu.id;
+      App.speichern();
+      App.render();
+    }
+  }
+
   function render(wurzel) {
     const projekt = App.projekt;
     const el = auswahl();
     const kennzeichen = SysM.Kennzeichnung.berechneKennzeichen(projekt);
 
     wurzel.append(infoBox(
-      "Gliedern Sie die Anlage von grob nach fein – wie Sie sie auch einem Kollegen erklären würden. ",
-      "Die Reihenfolge im Baum bestimmt die automatische Nummerierung der Kennzeichen. ",
-      "Bausteine, die nicht jede Maschine bekommt, markieren Sie als „Option“."));
+      "Setzen Sie die Maschine aus dem Baukasten zusammen: Baustein anklicken oder direkt auf das Bild ziehen. ",
+      "Kürzel, Produktklassen und typische Signale sind schon voreingestellt – Kennzeichen entstehen automatisch."));
+
+    wurzel.append(renderMaschinenPanel(projekt, el, kennzeichen));
 
     const container = h("div", { class: "split" });
-    container.append(renderBaum(projekt, el, kennzeichen));
-    container.append(el ? renderDetail(projekt, el, kennzeichen) : h("div", { class: "panel" }, leererHinweis("Kein Element ausgewählt.")));
+    container.append(renderBaukasten(projekt));
+    container.append(el ? renderDetail(projekt, el, kennzeichen) : h("div", { class: "panel detail" }, leererHinweis("Klicken Sie im Bild auf einen Block, um ihn zu bearbeiten.")));
     wurzel.append(container);
   }
 
-  // ---- Baum ----------------------------------------------------------------
+  // ---- Maschinenbild / Liste -------------------------------------------------
 
-  function renderBaum(projekt, ausgewaehlt, kennzeichen) {
-    const liste = h("div", { class: "baum" });
+  function renderMaschinenPanel(projekt, el, kennzeichen) {
+    const ansicht = App.ansicht;
+    const panel = h("div", { class: "panel maschinen-panel" });
+
+    panel.append(h("div", { class: "panel-kopf" },
+      h("h3", {}, "Ihre Maschine"),
+      h("div", { class: "knopf-reihe" },
+        segmente([{ wert: "bild", text: "Maschinenbild" }, { wert: "liste", text: "Liste" }], ansicht.modus,
+          (w) => { ansicht.modus = w; App.speichern(); App.render(); }),
+        ansicht.modus === "bild" ? h("label", { class: "radio kompakt" },
+          h("input", {
+            type: "checkbox", checked: ansicht.bmk,
+            onchange: (e) => { ansicht.bmk = e.target.checked; App.speichern(); App.render(); },
+          }), " Kennzeichen einblenden") : null,
+        ansicht.modus === "bild" ? h("div", { class: "knopf-reihe" },
+          h("button", { class: "knopf leise", title: "Kleiner", onclick: () => { ansicht.zoom = Math.max(0.6, Math.round((ansicht.zoom - 0.2) * 10) / 10); App.speichern(); App.render(); } }, "−"),
+          h("button", { class: "knopf leise", title: "Größer", onclick: () => { ansicht.zoom = Math.min(2.4, Math.round((ansicht.zoom + 0.2) * 10) / 10); App.speichern(); App.render(); } }, "+"),
+        ) : null,
+      ),
+    ));
+
+    if (ansicht.modus === "bild") {
+      panel.append(Maschinenbild.render(projekt, {
+        auswahlId: el ? el.id : null,
+        kennzeichen,
+        zeigeBmk: ansicht.bmk,
+        zoom: ansicht.zoom,
+        onKlick: (geklickt) => {
+          if (geklickt) { App.auswahl.elementId = geklickt.id; App.render(); }
+        },
+        onDrop: (vorlageId, zielEl) => bausteinEinfuegen(vorlageId, zielEl),
+      }));
+      panel.append(h("div", { class: "mb-fusszeile" },
+        Maschinenbild.legende(),
+        h("span", { class: "klein" }, "Block anklicken = auswählen · Baustein aus dem Baukasten auf einen Block ziehen = dort einfügen"),
+      ));
+    } else {
+      panel.append(renderListe(projekt, el, kennzeichen));
+    }
+    return panel;
+  }
+
+  function renderListe(projekt, ausgewaehlt, kennzeichen) {
+    const liste = h("div", { class: "baum baum-breit" });
     for (const { el, tiefe } of Model().elementeInBaumfolge(projekt)) {
       const kz = kennzeichen[el.id];
       liste.append(h("button", {
@@ -61,34 +125,46 @@
         h("span", { class: "baum-bmk" }, kz ? kz.bmk : ""),
       ));
     }
-
-    return h("div", { class: "panel" },
-      h("div", { class: "panel-kopf" },
-        h("h3", {}, "Anlagengliederung"),
-        h("button", {
-          class: "knopf",
-          onclick: () => neuesElementAnlegen(projekt, ausgewaehlt),
-        }, "+ Unterelement"),
-      ),
-      liste,
-      h("p", { class: "klein" }, "Ein Element anklicken, um es rechts zu bearbeiten."),
-    );
+    return liste;
   }
 
-  function neuesElementAnlegen(projekt, ausgewaehlt) {
-    const eltern = ausgewaehlt && ausgewaehlt.typ !== "Komponente"
-      ? ausgewaehlt
-      : (ausgewaehlt ? Model().findeElement(projekt, ausgewaehlt.elternId) : null);
-    const typ = eltern ? (KIND_TYP_VORSCHLAG[eltern.typ] || "Station") : "Anlage";
-    const neu = Model().neuesElement({
-      name: "Neues Element",
-      typ,
-      elternId: eltern ? eltern.id : null,
-    });
-    projekt.elemente.push(neu);
-    App.auswahl.elementId = neu.id;
-    App.speichern();
-    App.render();
+  // ---- Baukasten ---------------------------------------------------------------
+
+  function renderBaukasten(projekt) {
+    const panel = h("div", { class: "panel baukasten" },
+      h("h3", {}, "Baukasten"),
+      h("p", { class: "klein" }, "Anklicken fügt den Baustein bei der Auswahl ein – oder auf das Bild ziehen."));
+
+    for (const gruppe of SysM.Vorlagen.GRUPPEN) {
+      const aufklappen = gruppe.titel !== "Grundbausteine";
+      const block = h("details", { class: "baukasten-gruppe", ...(aufklappen ? { open: "" } : {}) },
+        h("summary", {}, gruppe.titel));
+      block.append(h("p", { class: "klein" }, gruppe.hinweis));
+      const raster = h("div", { class: "baukasten-raster" });
+      for (const vorlage of gruppe.eintraege) {
+        const farbe = Maschinenbild.FARBEN[vorlage.typ] || Maschinenbild.FARBEN.Komponente;
+        const knopf = h("button", {
+          class: "vorlage-knopf",
+          draggable: "true",
+          title: vorlage.kinder ? "Bringt mit: " + vorlage.kinder.map((k) => k.name).join(", ") : vorlage.name,
+          onclick: () => bausteinEinfuegen(vorlage.id, null),
+        },
+          h("span", {
+            class: "vorlage-wuerfel",
+            style: `background:${farbe[0]};border-color:${farbe[2]};box-shadow:2px 2px 0 ${farbe[1]};`,
+          }),
+          h("span", { class: "vorlage-name" }, vorlage.name),
+        );
+        knopf.addEventListener("dragstart", (ereignis) => {
+          ereignis.dataTransfer.setData("text/vorlage", vorlage.id);
+          ereignis.dataTransfer.effectAllowed = "copy";
+        });
+        raster.append(knopf);
+      }
+      block.append(raster);
+      panel.append(block);
+    }
+    return panel;
   }
 
   // ---- Detail ---------------------------------------------------------------
@@ -102,14 +178,21 @@
     detail.append(h("div", { class: "panel-kopf" },
       h("h3", {}, el.name),
       h("div", { class: "knopf-reihe" },
-        h("button", { class: "knopf leise", onclick: () => { Model().verschiebeElement(projekt, el.id, -1); App.speichern(); App.render(); } }, "↑"),
-        h("button", { class: "knopf leise", onclick: () => { Model().verschiebeElement(projekt, el.id, +1); App.speichern(); App.render(); } }, "↓"),
+        h("button", { class: "knopf leise", title: "In der Reihenfolge nach vorn", onclick: () => { Model().verschiebeElement(projekt, el.id, -1); App.speichern(); App.render(); } }, "↑"),
+        h("button", { class: "knopf leise", title: "In der Reihenfolge nach hinten", onclick: () => { Model().verschiebeElement(projekt, el.id, +1); App.speichern(); App.render(); } }, "↓"),
+        el.elternId ? h("button", {
+          class: "knopf leise", title: "Element samt Inhalt kopieren",
+          onclick: () => {
+            const kopie = Model().kopiereUnterbaum(projekt, el.id);
+            if (kopie) { App.auswahl.elementId = kopie.id; App.speichern(); App.render(); }
+          },
+        }, "Duplizieren") : null,
         h("button", {
           class: "knopf gefahr",
           onclick: () => {
-            const anzahl = 1 + Model().elementeInBaumfolge(projekt).filter(({ el: e }) => Model().istNachfahre(projekt, el.id, e.id)).length - 1;
-            const frage = anzahl > 1
-              ? `„${el.name}“ und ${anzahl - 1} untergeordnete Elemente löschen?`
+            const nachfahren = projekt.elemente.filter((e) => Model().istNachfahre(projekt, el.id, e.id)).length;
+            const frage = nachfahren
+              ? `„${el.name}“ und ${nachfahren} enthaltene Elemente löschen?`
               : `„${el.name}“ löschen?`;
             if (!confirm(frage)) return;
             Model().entferneElement(projekt, el.id);
@@ -123,19 +206,22 @@
 
     detail.append(h("div", { class: "kennzeichen-anzeige" },
       "Kennzeichen: ", h("strong", {}, kz.bmk || "(noch unvollständig)"),
-      h("span", { class: "feld-hinweis" }, " – wird automatisch aus der Struktur berechnet"),
+      h("span", { class: "feld-hinweis" }, " – entsteht automatisch aus Aufbau und Reihenfolge"),
     ));
 
     detail.append(feld("Name", textEingabe(el.name, (w) => { el.name = w || el.name; App.speichern(); App.render(); })));
 
     detail.append(feld("Ebene",
-      select(Model().ELEMENT_TYPEN, el.typ, (w) => { el.typ = w; App.speichern(); App.render(); }),
-      "Anlage → Teilanlage → Station → Baugruppe → Komponente. Komponenten sind die konkreten Betriebsmittel (Motor, Sensor, Ventil …)."));
+      segmente(Model().ELEMENT_TYPEN, el.typ, (w) => { el.typ = w; App.speichern(); App.render(); }),
+      istKomponente
+        ? "Komponenten sind die konkreten Betriebsmittel (Motor, Sensor, Ventil …)."
+        : "Von grob (Anlage) nach fein (Komponente)."));
 
     if (!istKomponente) {
       detail.append(feld("Funktionskürzel",
-        textEingabe(el.kuerzel, (w) => { el.kuerzel = w.toUpperCase().trim(); App.speichern(); App.render(); }, { placeholder: "z. B. DOS" }),
-        "Kurzzeichen für den Funktionsteil des Kennzeichens, z. B. DOS für Dosieren. Gleiche Kürzel auf einer Ebene werden automatisch nummeriert."));
+        textEingabe(el.kuerzel, (w) => { el.kuerzel = w.toUpperCase().trim(); App.speichern(); App.render(); },
+          { placeholder: "automatisch: " + SysM.Kennzeichnung.autoKuerzel(el.name) }),
+        "Kurzzeichen im Kennzeichen (z. B. DOS für Dosieren). Leer lassen = wird aus dem Namen abgeleitet."));
     } else {
       const klassen = [{ wert: "", text: "– bitte wählen –" }]
         .concat(Model().PRODUKT_KLASSEN.map((k) => ({ wert: k.code, text: k.code + " – " + k.text })));
@@ -144,20 +230,23 @@
       }
       detail.append(feld("Produktklasse",
         select(klassen, el.produktKlasse, (w) => { el.produktKlasse = w; App.speichern(); App.render(); }),
-        "Kennbuchstabe nach IEC 81346-2. Die laufende Nummer (M1, M2, …) vergibt das Werkzeug."));
+        "Kennbuchstabe nach IEC 81346-2 – die laufende Nummer (M1, M2 …) vergibt das Werkzeug."));
     }
 
-    detail.append(feld("Ortskennzeichen (+)",
+    detail.append(renderVerwendung(projekt, el));
+    if (istKomponente) detail.append(renderSignale(projekt, el));
+    detail.append(renderMerkmalwerte(projekt, el));
+
+    // Selten Gebrauchtes eingeklappt
+    const weitere = h("details", { class: "unterblock-details" },
+      h("summary", {}, "Weitere Angaben (Ort, Kommentar)"));
+    weitere.append(feld("Ortskennzeichen (+)",
       textEingabe(el.ort, (w) => { el.ort = w.trim(); App.speichern(); App.render(); }, { placeholder: "z. B. S1 oder F1" }),
       "Wo sitzt das? (Schaltschrank S1, Feld F1 …). Leer = vom übergeordneten Element geerbt" + (kz.ort ? ` – aktuell wirksam: ${kz.ort}` : "") + "."));
-
-    detail.append(renderVerwendung(projekt, el));
-    detail.append(renderMerkmalwerte(projekt, el));
-    if (istKomponente) detail.append(renderSignale(projekt, el));
-
-    detail.append(feld("Kommentar",
+    weitere.append(feld("Kommentar",
       h("textarea", { rows: 2, onchange: (e) => { el.kommentar = e.target.value; App.speichern(); } }, el.kommentar || ""),
       "Freitext, z. B. Herkunft oder Randbedingungen."));
+    detail.append(weitere);
 
     return detail;
   }
@@ -165,29 +254,18 @@
   // ---- Verwendung / Options-Bedingung ---------------------------------------
 
   function renderVerwendung(projekt, el) {
-    const block = h("div", { class: "unterblock" }, h("h4", {}, "Verwendung"));
+    const block = h("div", { class: "unterblock" }, h("h4", {}, "Immer dabei oder Option?"));
 
-    const radioName = "verwendung-" + el.id;
-    block.append(
-      h("label", { class: "radio" },
-        h("input", {
-          type: "radio", name: radioName, checked: el.verwendung !== "option",
-          onchange: () => { el.verwendung = "standard"; App.speichern(); App.render(); },
-        }),
-        " Standardumfang – ist in jeder Maschine enthalten"),
-      h("label", { class: "radio" },
-        h("input", {
-          type: "radio", name: radioName, checked: el.verwendung === "option",
-          onchange: () => { el.verwendung = "option"; App.speichern(); App.render(); },
-        }),
-        " Option – nur enthalten, wenn die Bedingung erfüllt ist"),
-    );
+    block.append(segmente(
+      [{ wert: "standard", text: "✓ Immer dabei" }, { wert: "option", text: "Option" }],
+      el.verwendung === "option" ? "option" : "standard",
+      (w) => { el.verwendung = w; App.speichern(); App.render(); }));
 
     if (el.verwendung === "option") {
       if (!projekt.merkmale.length) {
         block.append(leererHinweis("Es gibt noch keine Merkmale. Legen Sie zuerst in Schritt 2 ein Merkmal an (z. B. „Etikettierung Ja/Nein“)."));
       } else {
-        block.append(h("p", { class: "klein" }, "Enthalten, wenn alle folgenden Bedingungen erfüllt sind:"));
+        block.append(h("p", { class: "klein" }, "Dieser Baustein ist enthalten, wenn gilt:"));
         block.append(renderBedingungsZeilen(projekt, el.bedingung, () => { App.speichern(); App.render(); }));
       }
     }
@@ -222,11 +300,11 @@
   // ---- Merkmalwerte ----------------------------------------------------------
 
   function renderMerkmalwerte(projekt, el) {
-    const block = h("div", { class: "unterblock" },
-      h("h4", {}, "Merkmalwerte an diesem Element"),
-      h("p", { class: "klein" }, "Feste Werte dieses Elements. Merkmale selbst werden in Schritt 2 definiert; Regeln können Werte je Variante überschreiben."));
-
     const eintraege = Object.entries(el.merkmalwerte || {});
+    const frei = projekt.merkmale.filter((m) => !(m.id in (el.merkmalwerte || {})));
+
+    const block = h("div", { class: "unterblock" }, h("h4", {}, "Technische Daten (Merkmalwerte)"));
+
     if (eintraege.length) {
       const tabelle = h("table", { class: "tabelle" },
         h("thead", {}, h("tr", {}, h("th", {}, "Merkmal"), h("th", {}, "Wert"), h("th", {}, "Einheit"), h("th", {}, ""))));
@@ -245,9 +323,10 @@
       }
       tabelle.append(rumpf);
       block.append(tabelle);
+    } else {
+      block.append(h("p", { class: "klein" }, "Noch keine Werte an diesem Baustein. Regeln können Werte je Variante setzen."));
     }
 
-    const frei = projekt.merkmale.filter((m) => !(m.id in (el.merkmalwerte || {})));
     if (frei.length) {
       block.append(h("div", { class: "knopf-reihe" },
         select([{ wert: "", text: "+ Merkmal zuweisen …" }].concat(frei.map((m) => ({ wert: m.id, text: m.name }))), "",
@@ -259,8 +338,6 @@
             App.render();
           }),
       ));
-    } else if (!projekt.merkmale.length) {
-      block.append(leererHinweis("Noch keine Merkmale definiert (Schritt 2)."));
     }
     return block;
   }
@@ -269,8 +346,7 @@
 
   function renderSignale(projekt, el) {
     const block = h("div", { class: "unterblock" },
-      h("h4", {}, "Signale (für PLC-Tags)"),
-      h("p", { class: "klein" }, "Welche Signale tauscht diese Komponente mit der Steuerung aus? Daraus entstehen in Schritt 5 die PLC-Tags."));
+      h("h4", {}, "Signale (werden zu PLC-Tags)"));
 
     el.signale = el.signale || [];
     if (el.signale.length) {
@@ -291,6 +367,8 @@
       });
       tabelle.append(rumpf);
       block.append(tabelle);
+    } else {
+      block.append(h("p", { class: "klein" }, "Welche Signale tauscht diese Komponente mit der Steuerung aus? Aus jedem Signal entsteht in Schritt 5 ein PLC-Tag."));
     }
 
     block.append(h("button", {

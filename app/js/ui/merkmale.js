@@ -133,6 +133,15 @@
         "Nur zur Anzeige – der Wert selbst bleibt eine reine Zahl."));
     }
 
+    if (mk.typ === "zahl") {
+      detail.append(feld("Sinnvoller Bereich (von / bis)",
+        h("div", { class: "knopf-reihe" },
+          textEingabe(mk.min, (w) => { mk.min = w.trim(); App.speichern(); App.render(); }, { placeholder: "von", class: "sehr-schmal" }),
+          h("span", { class: "klein" }, "bis"),
+          textEingabe(mk.max, (w) => { mk.max = w.trim(); App.speichern(); App.render(); }, { placeholder: "bis", class: "sehr-schmal" })),
+        "Optional. Wenn gesetzt, wird die Frage in Schritt 4 als Schieberegler angezeigt."));
+    }
+
     detail.append(h("div", { class: "unterblock" },
       h("label", { class: "radio" },
         h("input", {

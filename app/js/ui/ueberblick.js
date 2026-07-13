@@ -28,6 +28,23 @@
       ),
     );
 
+    // Die Maschine auf einen Blick – Klick führt in Schritt 1.
+    if (projekt.elemente.length > 1) {
+      const kennzeichen = SysM.Kennzeichnung.berechneKennzeichen(projekt);
+      const vorschau = h("div", { class: "panel vorschau-panel" });
+      vorschau.append(Maschinenbild.render(projekt, {
+        kennzeichen,
+        maxHoehe: 240,
+        onKlick: (el) => {
+          if (el) App.auswahl.elementId = el.id;
+          App.zeigeTab("struktur");
+        },
+      }));
+      vorschau.append(h("p", { class: "klein", style: "text-align:center" },
+        "Ihre Maschine – dasselbe Bild begleitet Vertrieb (Variante zeigen), Engineering (Aufbau) und Service (Wiederfinden). Klick öffnet Schritt 1."));
+      wurzel.append(vorschau);
+    }
+
     wurzel.append(h("div", { class: "schritt-karten" },
       SCHRITTE.map((s) => h("button", { class: "schritt-karte", onclick: () => App.zeigeTab(s.tab) },
         h("span", { class: "schritt-nr" }, String(s.nr)),

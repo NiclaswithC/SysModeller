@@ -9,6 +9,7 @@ const Kennzeichnung = require("../app/js/core/labeling.js");
 const Sysml = require("../app/js/core/sysml.js");
 const Exporte = require("../app/js/core/exporte.js");
 const Beispiel = require("../app/js/core/beispiel.js");
+const Vorlagen = require("../app/js/core/vorlagen.js");
 
 let ok = 0;
 let fehler = 0;
@@ -56,6 +57,40 @@ console.log("Modell …");
   const folge = Model.elementeInBaumfolge(projekt).map((e) => e.el.name);
   gleich(folge.join(","), "A,S2,S1", "Baumfolge nach Verschieben");
   pruefe(!Model.verschiebeElement(projekt, s2.id, -1), "Verschieben über den Anfang hinaus abgelehnt");
+}
+
+// ---- Baukasten & Duplizieren ------------------------------------------------
+console.log("Baukasten …");
+{
+  const projekt = Model.neuesProjekt("B");
+  const wurzelId = projekt.elemente[0].id;
+
+  // Baugruppen-Vorlage bringt Komponenten samt Signalen mit.
+  const band = Vorlagen.instanziiere(projekt, "bg-foerderband", wurzelId);
+  gleich(band.typ, "Baugruppe", "Vorlage: Förderband ist eine Baugruppe");
+  gleich(band.kuerzel, "TRB", "Vorlage: Kürzel voreingestellt");
+  const kinder = Model.kinder(projekt, band.id);
+  gleich(kinder.length, 2, "Vorlage: Komponenten kommen mit");
+  pruefe(kinder[0].signale.length > 0 && kinder[0].signale[0].id, "Vorlage: Signale mit eigenen IDs");
+  gleich(kinder[0].produktKlasse, "M", "Vorlage: Produktklasse gesetzt");
+
+  // Namen werden unter Geschwistern automatisch nummeriert.
+  const band2 = Vorlagen.instanziiere(projekt, "bg-foerderband", wurzelId);
+  gleich(band2.name, "Förderband 2", "Vorlage: Namen werden nummeriert");
+
+  // Unbekannte Vorlage liefert null.
+  gleich(Vorlagen.instanziiere(projekt, "gibt-es-nicht", wurzelId), null, "Unbekannte Vorlage abgelehnt");
+
+  // Duplizieren kopiert den Unterbaum mit neuen IDs direkt hinter das Original.
+  const anzahlVorher = projekt.elemente.length;
+  const kopie = Model.kopiereUnterbaum(projekt, band.id);
+  gleich(projekt.elemente.length, anzahlVorher + 3, "Duplizieren: drei neue Elemente");
+  gleich(kopie.name, "Förderband 3", "Duplizieren: Name nummeriert");
+  pruefe(kopie.id !== band.id, "Duplizieren: neue ID");
+  const kopieKinder = Model.kinder(projekt, kopie.id);
+  gleich(kopieKinder.length, 2, "Duplizieren: Kinder mitkopiert");
+  pruefe(kopieKinder[0].signale[0].id !== kinder[0].signale[0].id, "Duplizieren: neue Signal-IDs");
+  gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Duplizieren: Modell bleibt gültig");
 }
 
 // ---- Regel-Engine ----------------------------------------------------------

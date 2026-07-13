@@ -307,6 +307,164 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent-hell
 .schritt-titel { font-weight: 700; font-size: 15px; }
 .schritt-text { font-size: 13px; color: var(--tinte-leise); line-height: 1.45; }
 
+/* ---- Maschinenbild ---- */
+.mb-behaelter {
+  background: linear-gradient(175deg, #f9fbfd, #eef2f6);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 6px;
+  text-align: center;
+  overflow: auto;
+}
+.mb-svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+.mb-box { cursor: pointer; }
+.mb-box polygon { stroke: rgba(30, 40, 55, 0.25); stroke-width: 0.8; stroke-linejoin: round; }
+.mb-box:hover polygon { filter: brightness(1.06); }
+.mb-box .mb-deckel { stroke: transparent; stroke-width: 2; fill: none; }
+.mb-box.mb-option .mb-deckel { stroke: #b8860b; stroke-dasharray: 5 4; }
+.mb-box.mb-ausgewaehlt polygon { stroke: var(--akzent); stroke-width: 1.4; }
+.mb-box.mb-ausgewaehlt .mb-deckel { stroke: var(--akzent); stroke-width: 2.5; stroke-dasharray: none; }
+.mb-box.mb-entfaellt { opacity: 0.22; }
+.mb-box.mb-dropziel polygon { stroke: var(--gut); stroke-width: 2; }
+.mb-name-sockel, .mb-name-frei {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  fill: #22303f;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.mb-bmk {
+  font-family: Consolas, monospace;
+  font-size: 10.5px;
+  fill: #1f4d80;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.mb-fusszeile { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.mb-legende { display: flex; gap: 14px; flex-wrap: wrap; }
+.mb-legende-eintrag { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--tinte-leise); }
+.mb-legende-farbe { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; display: inline-block; }
+.mb-legende-option { border: 1.5px dashed #b8860b; background: #fff; }
+.maschinen-panel .radio.kompakt { margin: 0; font-size: 13.5px; white-space: nowrap; }
+.baum-breit { max-height: 420px; }
+.vorschau-panel { text-align: center; }
+
+/* ---- Baukasten ---- */
+.baukasten { flex: 0 1 340px !important; min-width: 280px; }
+.baukasten-gruppe { border-top: 1px solid var(--linie); padding: 8px 0; }
+.baukasten-gruppe summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 3px 0; }
+.baukasten-gruppe .klein { margin: 4px 0 8px; }
+.baukasten-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.vorlage-knopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 7px 8px;
+  border: 1px solid var(--linie);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--tinte);
+  cursor: grab;
+}
+.vorlage-knopf:hover { border-color: var(--akzent); background: var(--akzent-hell); }
+.vorlage-wuerfel { width: 16px; height: 16px; border-radius: 3px; border: 1px solid; flex: none; }
+.vorlage-name { line-height: 1.2; }
+
+/* ---- Große Bedienelemente ---- */
+.segmente { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--linie); border-radius: 7px; overflow: hidden; background: #fff; }
+.segment {
+  font: inherit;
+  font-size: 13.5px;
+  padding: 7px 13px;
+  border: none;
+  border-right: 1px solid var(--linie);
+  background: #fff;
+  color: var(--tinte);
+  cursor: pointer;
+}
+.segment:last-child { border-right: none; }
+.segment:hover { background: var(--flaeche); }
+.segment.aktiv { background: var(--akzent); color: #fff; font-weight: 600; }
+
+.schalter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 2px;
+}
+.schalter-knauf {
+  width: 46px; height: 26px;
+  border-radius: 13px;
+  background: #c6ccd4;
+  position: relative;
+  transition: background 0.15s;
+  flex: none;
+}
+.schalter-knauf::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: left 0.15s;
+}
+.schalter.an .schalter-knauf { background: var(--gut); }
+.schalter.an .schalter-knauf::after { left: 23px; }
+.schalter-text { font-weight: 600; min-width: 34px; text-align: left; }
+
+.schieber-zeile { display: flex; align-items: center; gap: 12px; }
+.schieber { flex: 1; max-width: 260px; accent-color: var(--akzent); height: 26px; }
+.schieber-wert { font-weight: 700; font-size: 15px; min-width: 80px; }
+
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper-feld { width: 90px !important; text-align: center; font-weight: 700; }
+
+.frage-block { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--linie); }
+.frage-block.kompakt { margin-bottom: 10px; padding-bottom: 8px; }
+.frage-block.kompakt .frage-titel { display: block; margin-bottom: 4px; }
+.frage-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.frage-titel { font-weight: 700; font-size: 14.5px; }
+.frage-standard { font-size: 11.5px; color: var(--tinte-leise); border: 1px solid var(--linie); border-radius: 10px; padding: 1px 8px; }
+.frage-zuruecksetzen {
+  font: inherit; font-size: 11.5px;
+  color: var(--akzent);
+  background: none;
+  border: 1px solid var(--linie);
+  border-radius: 10px;
+  padding: 1px 8px;
+  cursor: pointer;
+}
+.frage-zuruecksetzen:hover { background: var(--akzent-hell); }
+
+/* ---- Regel-Simulator ---- */
+.punkt { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.punkt-gruen { background: var(--gut); box-shadow: 0 0 3px var(--gut); }
+.punkt-leer { background: #fff; border: 1.5px solid #c0c7cf; }
+.punkt-grau { background: #c0c7cf; }
+.bedingung-status { font-size: 13.5px; padding: 4px 8px; border-radius: 5px; margin-bottom: 4px; }
+.bedingung-status.erfuellt { background: #e7f4ea; color: #14562b; }
+.bedingung-status.nicht-erfuellt { background: var(--flaeche); color: var(--tinte-leise); }
+
+.unterblock-details { border-top: 1px solid var(--linie); margin-top: 14px; padding-top: 12px; }
+.unterblock-details summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--tinte-leise); margin-bottom: 8px; }
+.unterblock-details summary:hover { color: var(--akzent); }
+
 /* ---- Übergabe ---- */
 .export-karten {
   display: grid;

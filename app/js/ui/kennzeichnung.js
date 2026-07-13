@@ -60,6 +60,20 @@
 
     for (const k of konflikte) wurzel.append(meldungBox(k.stufe, k.text));
 
+    // Maschinenbild mit eingeblendeten Kennzeichen
+    const bildPanel = h("div", { class: "panel" }, h("h3", {}, "Kennzeichen am Maschinenbild"));
+    bildPanel.append(Maschinenbild.render(projekt, {
+      status: ergebnis ? ergebnis.elementStatus : null,
+      kennzeichen,
+      zeigeBmk: true,
+      maxHoehe: 320,
+      onKlick: (el) => {
+        if (el) { App.auswahl.elementId = el.id; App.zeigeTab("struktur"); }
+      },
+    }));
+    bildPanel.append(h("p", { class: "klein" }, "Jede Komponente trägt ihr Kennzeichen. Klick auf einen Block führt zu Schritt 1."));
+    wurzel.append(bildPanel);
+
     // BMK-Tabelle
     const bmkPanel = h("div", { class: "panel" }, h("h3", {}, "Betriebsmittelkennzeichen (BMK)"));
     const bmkTabelle = h("table", { class: "tabelle" },

@@ -15,6 +15,8 @@
       "typ": "zahl",
       "einheit": "1/min",
       "werte": [],
+      "min": "20",
+      "max": "150",
       "istKonfiguration": true,
       "standardwert": "60",
       "irdi": "0173-1#02-AAE916#005",

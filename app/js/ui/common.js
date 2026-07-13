@@ -71,6 +71,89 @@ const UI = (() => {
     return eingabe;
   }
 
+  // ---- Große Bedienelemente (zum Klicken statt Tippen) ----------------------
+
+  /** Ja/Nein-Schalter. */
+  function schalter(wert, onChange) {
+    const an = String(wert).trim() === "ja";
+    const knopf = h("button", {
+      class: "schalter" + (an ? " an" : ""),
+      type: "button",
+      "aria-pressed": an ? "true" : "false",
+      onclick: () => onChange(an ? "nein" : "ja"),
+    },
+      h("span", { class: "schalter-knauf" }),
+      h("span", { class: "schalter-text" }, an ? "ja" : "nein"));
+    return knopf;
+  }
+
+  /** Schaltflächen-Gruppe (eine Auswahl). optionen: Strings oder {wert, text}. */
+  function segmente(optionen, wert, onChange) {
+    const gruppe = h("div", { class: "segmente" });
+    for (const opt of optionen) {
+      const o = typeof opt === "string" ? { wert: opt, text: opt } : opt;
+      gruppe.append(h("button", {
+        type: "button",
+        class: "segment" + (String(o.wert) === String(wert ?? "") ? " aktiv" : ""),
+        onclick: () => onChange(o.wert),
+      }, o.text));
+    }
+    return gruppe;
+  }
+
+  /** Schieberegler mit Zahlenfeld. */
+  function schieber(min, max, wert, einheit, onChange) {
+    const spanne = max - min;
+    const schritt = spanne <= 5 ? 0.1 : spanne <= 50 ? 1 : spanne <= 500 ? 5 : 10;
+    const aktuell = wert === "" || wert === undefined || wert === null
+      ? min : (parseFloat(String(wert).replace(",", ".")) || min);
+    const anzeige = h("span", { class: "schieber-wert" },
+      String(aktuell).replace(".", ",") + (einheit ? " " + einheit : ""));
+    const regler = h("input", {
+      type: "range", min, max, step: schritt, value: aktuell, class: "schieber",
+      oninput: (e) => { anzeige.textContent = String(e.target.value).replace(".", ",") + (einheit ? " " + einheit : ""); },
+      onchange: (e) => onChange(String(e.target.value).replace(".", ",")),
+    });
+    return h("div", { class: "schieber-zeile" }, regler, anzeige);
+  }
+
+  /** Plus/Minus-Zahleneingabe (wenn kein sinnvoller Bereich bekannt ist). */
+  function stepper(wert, einheit, onChange) {
+    const eingabe = h("input", {
+      type: "text", inputmode: "decimal", class: "stepper-feld",
+      value: wert ?? "",
+      onchange: (e) => onChange(e.target.value),
+    });
+    function schritt(delta) {
+      const z = parseFloat(String(eingabe.value).replace(",", ".")) || 0;
+      const neu = String(Math.round((z + delta) * 100) / 100).replace(".", ",");
+      eingabe.value = neu;
+      onChange(neu);
+    }
+    return h("div", { class: "stepper" },
+      h("button", { type: "button", class: "knopf leise", onclick: () => schritt(-1) }, "−"),
+      eingabe,
+      einheit ? h("span", { class: "klein" }, einheit) : null,
+      h("button", { type: "button", class: "knopf leise", onclick: () => schritt(+1) }, "+"));
+  }
+
+  /**
+   * Große Eingabe für einen Merkmalwert (für Fragebögen und Simulator):
+   * Ja/Nein -> Schalter, Auswahl -> Schaltflächen, Zahl -> Regler/Stepper.
+   */
+  function grossWertEingabe(merkmal, wert, onChange) {
+    if (!merkmal) return textEingabe(wert, onChange);
+    if (merkmal.typ === "jaNein") return schalter(wert, onChange);
+    if (merkmal.typ === "auswahl") return segmente(merkmal.werte || [], wert, onChange);
+    if (merkmal.typ === "zahl") {
+      const min = parseFloat(String(merkmal.min ?? "").replace(",", "."));
+      const max = parseFloat(String(merkmal.max ?? "").replace(",", "."));
+      if (!isNaN(min) && !isNaN(max) && max > min) return schieber(min, max, wert, merkmal.einheit, onChange);
+      return stepper(wert, merkmal.einheit, onChange);
+    }
+    return textEingabe(wert, onChange);
+  }
+
   function infoBox(...inhalt) {
     return h("div", { class: "info-box" }, ...inhalt);
   }
@@ -101,7 +184,10 @@ const UI = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  return { h, select, feld, textEingabe, wertEingabe, infoBox, badge, meldungBox, leererHinweis, download };
+  return {
+    h, select, feld, textEingabe, wertEingabe, infoBox, badge, meldungBox, leererHinweis, download,
+    schalter, segmente, schieber, stepper, grossWertEingabe,
+  };
 })();
 
 /** Sammelbecken für die Reiter; app.js zeichnet daraus die Navigation. */

@@ -107,7 +107,8 @@ Ex-/Importer gegen dieses JSON, ohne Änderung am Modell selbst.
 | Offener Punkt | Entscheidung | Begründung |
 |---|---|---|
 | Technologie-Stack | Reines HTML/CSS/JS, keine Abhängigkeiten, kein Server | „Datei öffnen, läuft“ – niedrigste denkbare Hürde; IT-Freigabe unkritisch; Kernlogik trotzdem separat testbar |
-| UI-Paradigma | Sechs nummerierte Reiter = Arbeitsfolge | Der Werkzeugzweck ist an der Navigation ablesbar; kein Menü-Lernen |
+| UI-Paradigma | Sechs nummerierte Reiter = Arbeitsfolge; interaktives Maschinenbild als Hauptansicht; Baukasten statt leerer Formulare; Schalter/Regler statt Textfeldern | Der Werkzeugzweck ist an der Navigation ablesbar; Maschinenbauer denken räumlich – die Maschine wird zusammengesetzt, nicht eingetragen |
+| Maschinenbild | Isometrische Blockansicht, rein aus der Struktur berechnet (kein CAD) | Räumliche Wiedererkennung für Vertrieb/Engineering/Service ohne Geometriedaten; später können CAD-Hüllen (JT/STEP) je Element angehängt werden, ohne das Modell zu ändern |
 | Datenhaltung | Browser-Speicher + eine JSON-Datei pro Projekt | Datei-Metapher, die jeder kennt (ablegen, mailen, versionieren) |
 | Umfang der Regelsprache | Nur UND-verknüpfte Vergleiche und vier Aktionsarten | Klein genug, um jede Regel als deutschen Satz anzuzeigen; deckt Wertableitung, Optionswahl und Prüfung ab |
 | Grad der Automatisierung | Berechnen ja, stillschweigend entscheiden nein | Kennzeichen/Adressen/Varianten werden automatisch erzeugt, aber Konflikte und Widersprüche immer gemeldet |

@@ -14,11 +14,17 @@
     tab: "ueberblick",
     aktiveKonfigId: "",
     auswahl: { elementId: null, merkmalId: null, regelId: null, konfigId: null },
+    ansicht: { modus: "bild", bmk: false, zoom: 1 },   // Darstellung des Maschinenbilds
+    regelTest: { antworten: {} },                       // Probier-Antworten des Regel-Simulators
 
     speichern() {
       try {
         localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(this.projekt));
-        localStorage.setItem(ZUSTAND_SCHLUESSEL, JSON.stringify({ tab: this.tab, aktiveKonfigId: this.aktiveKonfigId }));
+        localStorage.setItem(ZUSTAND_SCHLUESSEL, JSON.stringify({
+          tab: this.tab,
+          aktiveKonfigId: this.aktiveKonfigId,
+          ansicht: this.ansicht,
+        }));
       } catch (fehler) {
         console.warn("Speichern im Browser nicht möglich:", fehler);
       }
@@ -130,6 +136,7 @@
         const zustand = JSON.parse(localStorage.getItem(ZUSTAND_SCHLUESSEL) || "{}");
         if (REITER_FOLGE.includes(zustand.tab)) App.tab = zustand.tab;
         if (zustand.aktiveKonfigId) App.aktiveKonfigId = zustand.aktiveKonfigId;
+        if (zustand.ansicht) App.ansicht = Object.assign(App.ansicht, zustand.ansicht);
         return;
       }
     } catch (fehler) {
