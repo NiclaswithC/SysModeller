@@ -155,7 +155,33 @@ Adressvergabe in Baumreihenfolge, getrennt nach Eingängen (`%I`) und Ausgängen
 (`%Q`): Bool bitweise gepackt, Int/Word wortausgerichtet (`%IW/%QW`), Real
 doppelwortausgerichtet (`%ID/%QD`).
 
-## Übergabedaten (Schritt 6)
+## Firmenstandard-Bibliothek
+
+Die Bibliothek lebt getrennt vom Projekt (sie gilt firmenweit) in einer eigenen
+Datei (`schema: "sysmodeller-bibliothek/1"`). Ein Modul ist ein ID-freier
+Schnappschuss eines Unterbaums plus die dort verwendeten Merkmalsdefinitionen:
+
+```json
+{
+  "id": "md-…", "name": "Förderband Typ A", "version": 2,
+  "beschreibung": "…", "stand": "13.07.2026",
+  "wurzel": { "name": "…", "typ": "Baugruppe", "kuerzel": "TRB",
+              "signale": [...], "merkmalwerte": [{"merkmal": "…", "wert": "…"}],
+              "kinder": [ … ] },
+  "merkmale": [ { "name": "…", "typ": "…", "irdi": "…", … } ]
+}
+```
+
+- **Einfügen:** Merkmale werden im Zielprojekt über IRDI (bevorzugt) oder Namen
+  wiedererkannt; fehlende werden angelegt. Das eingefügte Wurzelelement erhält
+  `herkunft: { modulId, name, version }`.
+- **Abweichungs-Prüfung:** Instanz und Modul werden in Normalform verglichen
+  (Wurzelname und Kommentare dürfen abweichen); Unterschiede werden als lesbare
+  Sätze gemeldet. So bleibt sichtbar, ob „Standard“ noch Standard ist.
+- **Versionierung:** Veröffentlichen unter vorhandenem Namen erhöht die Version;
+  ältere Versionen bleiben erhalten, der Baukasten zeigt je Name die neueste.
+
+## Übergabedaten
 
 | Export | Format | Gedachter Abnehmer |
 |---|---|---|

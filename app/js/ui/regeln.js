@@ -1,6 +1,6 @@
 "use strict";
 /*
- * Reiter „3 · Regeln“: Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt
+ * Reiter „Regeln“ (Engineering): Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt
  * statt programmiert. Der Simulator daneben zeigt live, welche Regel bei
  * welchen Antworten greift – Wirkung sofort sichtbar.
  */
@@ -34,7 +34,7 @@
       "Regeln gelten in der Reihenfolge dieser Liste, die spätere gewinnt."));
 
     if (!projekt.merkmale.length) {
-      wurzel.append(leererHinweis("Regeln prüfen Merkmale – legen Sie zuerst in Schritt 2 Merkmale an."));
+      wurzel.append(leererHinweis("Regeln prüfen Merkmale – legen Sie zuerst unter „Merkmale“ welche an."));
       return;
     }
 
@@ -94,7 +94,7 @@
       h("p", { class: "klein" }, "Beispielantworten einstellen – Liste und Häkchen reagieren sofort. Ändert nichts am Projekt."));
 
     if (!fragen.length) {
-      block.append(h("p", { class: "klein" }, "Noch keine Konfigurationsmerkmale (Schritt 2)."));
+      block.append(h("p", { class: "klein" }, "Noch keine Fragen definiert (unter „Merkmale“ markieren)."));
       return block;
     }
 
@@ -268,5 +268,5 @@
     return zeile;
   }
 
-  Tabs.regeln = { titel: "3 · Regeln", render };
+  Tabs.regeln = { titel: "Regeln", render };
 })();

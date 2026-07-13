@@ -233,17 +233,17 @@
       ],
       konfigurationen: [
         {
-          id: "kf-basis", name: "Basis 60",
+          id: "kf-basis", name: "Basis 60", kunde: "Getränke Nord GmbH",
           antworten: { "mk-takt": "60", "mk-flasche": "1,0 l", "mk-etikett": "nein", "mk-spannung": "400 V / 50 Hz" },
           kommentar: "Einstiegsvariante ohne Etikettierer.",
         },
         {
-          id: "kf-premium", name: "Premium 90 mit Etikettierer",
+          id: "kf-premium", name: "Premium 90 mit Etikettierer", kunde: "Mineralbrunnen Süd AG",
           antworten: { "mk-takt": "90", "mk-flasche": "1,5 l", "mk-etikett": "ja", "mk-spannung": "400 V / 50 Hz" },
           kommentar: "Hohe Leistung, große Flaschen, mit Etikettierer.",
         },
         {
-          id: "kf-export", name: "Export USA 120",
+          id: "kf-export", name: "Export USA 120", kunde: "Beverage Inc., Ohio",
           antworten: { "mk-takt": "120", "mk-flasche": "0,5 l", "mk-etikett": "ja", "mk-spannung": "480 V / 60 Hz" },
           kommentar: "Zeigt Hinweis (UL) und Warnung (Etikettierer über 100 Takte).",
         },

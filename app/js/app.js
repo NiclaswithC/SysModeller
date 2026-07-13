@@ -6,8 +6,18 @@
   const { h } = UI;
   const SPEICHER_SCHLUESSEL = "sysmodeller.projekt";
   const ZUSTAND_SCHLUESSEL = "sysmodeller.zustand";
+  const BIBLIOTHEK_SCHLUESSEL = "sysmodeller.bibliothek";
 
-  const REITER_FOLGE = ["ueberblick", "struktur", "merkmale", "regeln", "varianten", "kennzeichnung", "uebergabe"];
+  // Navigation entlang des Maschinenbau-Prozesses, nicht entlang des Werkzeugs.
+  const REITER_GRUPPEN = [
+    { titel: "", tabs: ["ueberblick"] },
+    { titel: "Vertrieb", tabs: ["angebot"] },
+    { titel: "Engineering", tabs: ["struktur", "merkmale", "regeln"] },
+    { titel: "Standards", tabs: ["bibliothek"] },
+    { titel: "Übergabe", tabs: ["kennzeichnung", "uebergabe"] },
+  ];
+  const REITER_FOLGE = REITER_GRUPPEN.flatMap((g) => g.tabs);
+  const ALTE_TAB_NAMEN = { varianten: "angebot" };
 
   window.App = {
     projekt: null,
@@ -16,10 +26,12 @@
     auswahl: { elementId: null, merkmalId: null, regelId: null, konfigId: null },
     ansicht: { modus: "bild", bmk: false, zoom: 1 },   // Darstellung des Maschinenbilds
     regelTest: { antworten: {} },                       // Probier-Antworten des Regel-Simulators
+    bibliothek: { module: [] },                         // Firmenstandards (projektübergreifend)
 
     speichern() {
       try {
         localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(this.projekt));
+        localStorage.setItem(BIBLIOTHEK_SCHLUESSEL, JSON.stringify(this.bibliothek));
         localStorage.setItem(ZUSTAND_SCHLUESSEL, JSON.stringify({
           tab: this.tab,
           aktiveKonfigId: this.aktiveKonfigId,
@@ -79,12 +91,20 @@
 
   function renderNavigation() {
     const nav = h("nav", { class: "reiter" });
-    for (const name of REITER_FOLGE) {
-      nav.append(h("button", {
-        class: "reiter-knopf" + (App.tab === name ? " aktiv" : ""),
-        onclick: () => App.zeigeTab(name),
-      }, Tabs[name].titel));
-    }
+    REITER_GRUPPEN.forEach((gruppe, index) => {
+      const block = h("div", { class: "reiter-gruppe" });
+      if (gruppe.titel) block.append(h("span", { class: "reiter-gruppe-titel" }, gruppe.titel));
+      const knoepfe = h("div", { class: "reiter-gruppe-knoepfe" });
+      for (const name of gruppe.tabs) {
+        knoepfe.append(h("button", {
+          class: "reiter-knopf" + (App.tab === name ? " aktiv" : ""),
+          onclick: () => App.zeigeTab(name),
+        }, Tabs[name].titel));
+      }
+      block.append(knoepfe);
+      nav.append(block);
+      if (index < REITER_GRUPPEN.length - 1) nav.append(h("span", { class: "reiter-trenner" }));
+    });
     return nav;
   }
 
@@ -130,11 +150,22 @@
 
   function laden() {
     try {
+      const bibliothek = localStorage.getItem(BIBLIOTHEK_SCHLUESSEL);
+      if (bibliothek) App.bibliothek = JSON.parse(bibliothek);
+    } catch (fehler) {
+      console.warn("Bibliothek konnte nicht geladen werden:", fehler);
+    }
+    if (!App.bibliothek || !Array.isArray(App.bibliothek.module) || !App.bibliothek.module.length) {
+      // Startbestand: zwei Beispielstandards, damit die Bibliothek greifbar ist.
+      App.bibliothek = { module: SysM.Bibliothek.beispielModule(new Date().toLocaleDateString("de-DE")) };
+    }
+    try {
       const gespeichert = localStorage.getItem(SPEICHER_SCHLUESSEL);
       if (gespeichert) {
         App.projekt = SysM.Model.pruefeProjekt(JSON.parse(gespeichert));
         const zustand = JSON.parse(localStorage.getItem(ZUSTAND_SCHLUESSEL) || "{}");
-        if (REITER_FOLGE.includes(zustand.tab)) App.tab = zustand.tab;
+        const tab = ALTE_TAB_NAMEN[zustand.tab] || zustand.tab;
+        if (REITER_FOLGE.includes(tab)) App.tab = tab;
         if (zustand.aktiveKonfigId) App.aktiveKonfigId = zustand.aktiveKonfigId;
         if (zustand.ansicht) App.ansicht = Object.assign(App.ansicht, zustand.ansicht);
         return;

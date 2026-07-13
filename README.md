@@ -1,23 +1,28 @@
 # SysModeller
 
-**Von der Maschinenstruktur zu den Übergabedaten – standalone, PLM-frei, nachvollziehbar.**
+**Vom Angebot bis zum Service: eine Maschine, ein Modell – standalone, PLM-frei, nachvollziehbar.**
 
-SysModeller ist ein Proof of Concept für Advanced Machine Engineering (AME): der Übergang von
-personengebundenem Projektwissen (Erfahrung + Copy-Paste) zu einer strukturierten, wiederverwendbaren
-und regelbasierten Maschinenbeschreibung. Das Werkzeug bildet die Kette
+SysModeller ist ein Proof of Concept für Advanced Machine Engineering (AME) und beantwortet
+vier Kernprobleme des Maschinenbaus:
 
-> **Maschinenstruktur → Merkmale → Regeln/Varianten → Kennzeichnung → Übergabedaten**
-
-in einem einzigen, bewusst einfachen Werkzeug ab – bedienbar ohne Methodenschulung,
-mit einem formalen Systemmodell (SysML) im Hintergrund.
+1. **Steigende Komplexität** → wird geteilt: Die Maschine besteht aus Modulen, eine konkrete
+   Maschine entsteht über wenige Fragen; Regeln fügen zusammen und prüfen.
+2. **Ineffiziente Kommunikation (Excel + E-Mail)** → ein Projektmodell als einzige Quelle:
+   Angebotsmappe, Strukturliste, BMK-Liste und PLC-Tags werden daraus *erzeugt*, nicht abgeschrieben.
+3. **Scheinbare Wiederverwendung** („Conveyor Typ A“ ist in jeder Disziplin anders geschnitten) →
+   die **Bibliothek**: ein Modul wird einmal definiert – Mechanik-Aufbau, Elektrik-Komponenten,
+   Software-Signale, Merkmale – und überall in genau diesem Schnitt verwendet. Instanzen kennen
+   ihre Herkunft; **Abweichungen vom Standard werden erkannt und angezeigt**.
+4. **Wissensverlust beim Weggang erfahrener Kollegen** → Erfahrungswissen steht als WENN-DANN-Regeln
+   mit Begründung im Modell und wirkt bei jedem Angebot automatisch.
 
 ## Schnellstart
 
 Es gibt nichts zu installieren:
 
 1. `app/index.html` im Browser öffnen (Doppelklick genügt).
-2. Beim ersten Start ist das Beispielprojekt **Abfüllanlage** geladen – einfach die sechs Reiter
-   von links nach rechts durchgehen.
+2. Beim ersten Start ist das Beispielprojekt **Abfüllanlage** geladen, inklusive zweier
+   Firmenstandards in der Bibliothek.
 3. Eigenes Projekt: Kopfzeile → „Neues Projekt“. Gespeichert wird automatisch im Browser;
    „Projekt speichern“ erzeugt eine einzelne JSON-Datei zum Ablegen und Weitergeben.
 
@@ -27,19 +32,19 @@ Die Kernlogik ist ohne Browser testbar:
 node tests/run-tests.js
 ```
 
-## Die sechs Schritte
+## Aufbau entlang des realen Prozesses
 
-| Schritt | Reiter | Inhalt |
+| Rolle | Reiter | Inhalt |
 |---|---|---|
-| 1 | **Struktur** | Maschine aus dem **Baukasten** zusammensetzen (vorkonfigurierte Stationen, Baugruppen, Komponenten – per Klick oder Drag & Drop) – das interaktive **Maschinenbild** (isometrische 3D-Blockansicht) ist die Hauptansicht |
-| 2 | **Merkmale** | Merkmal-Katalog: Definition getrennt vom Wert, optional mit stabilem Bezeichner (IRDI) |
-| 3 | **Regeln** | Erfahrungswissen als WENN-DANN-Sätze, zusammengeklickt statt programmiert – mit **Live-Simulator** (welche Regel greift wann?) |
-| 4 | **Varianten** | Fragen mit Schaltern, Reglern und Schaltflächen beantworten → das Maschinenbild zeigt sofort, welche Bausteine die Variante bekommt |
-| 5 | **Kennzeichnung** | BMK (=, +, −) und PLC-Tags mit Adressen – deterministisch aus der Struktur berechnet |
-| 6 | **Übergabe** | Strukturliste, Merkmalliste, BMK-Liste, PLC-Tag-Tabelle (TIA-Aufbau), neutrales JSON, SysML |
+| **Vertrieb** | Angebot | Kundenanfrage mit Schaltern/Reglern erfassen → sofort Machbarkeit (geprüft gegen die Engineering-Regeln), Maschinenbild, Lieferumfang – und per Klick die **Angebotsmappe** als eigenständige HTML-Datei |
+| **Engineering** | Struktur | Maschine aus dem **Baukasten** zusammensetzen (Firmenstandards + vorkonfigurierte Bausteine, per Klick oder Drag & Drop) – das interaktive **Maschinenbild** (isometrische 3D-Blockansicht) ist die Hauptansicht |
+| **Engineering** | Merkmale | Merkmal-Katalog: Definition getrennt vom Wert, optional mit stabilem Bezeichner (IRDI) |
+| **Engineering** | Regeln | Erfahrungswissen als WENN-DANN-Sätze mit Begründung – mit **Live-Simulator** (welche Regel greift wann?) |
+| **Standards** | Bibliothek | Firmenstandards: einmal definiert, überall derselbe Schnitt; versioniert, als Datei teilbar, mit **Abweichungs-Prüfung** je Instanz |
+| **Übergabe** | Kennzeichnung, Übergabedaten | BMK (=, +, −) und PLC-Tags deterministisch aus der Struktur; Strukturliste, Merkmalliste, BMK-Liste, PLC-Tag-Tabelle (TIA-Aufbau), neutrales JSON, SysML |
 
-Jeder Schritt ist für sich nutzbar – wer nur Struktur und Kennzeichnung braucht, hört nach
-Schritt 1 und 5 auf; Merkmale, Regeln und Varianten kommen dazu, wenn die Organisation so weit ist.
+Jede Sicht ist für sich nutzbar – wer nur Struktur und Kennzeichnung braucht, nutzt nur diese;
+Merkmale, Regeln und Angebote kommen dazu, wenn die Organisation so weit ist.
 So bleibt ein einziges Modell über mehrere Reifegrade tragfähig.
 
 ## Leitideen

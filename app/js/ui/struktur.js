@@ -1,6 +1,6 @@
 "use strict";
 /*
- * Reiter „1 · Struktur“: Die Maschine wird aus dem Baukasten zusammengesetzt –
+ * Reiter „Struktur“ (Engineering): Die Maschine wird aus dem Baukasten zusammengesetzt –
  * per Klick oder indem man Bausteine direkt auf das Maschinenbild zieht.
  * Das Bild ist die Hauptansicht; eine Listenansicht steht daneben bereit.
  */
@@ -36,12 +36,20 @@
     return el || wurzel;
   }
 
-  function bausteinEinfuegen(vorlageId, wunschEl) {
+  function bausteinEinfuegen(kennung, wunschEl) {
     const projekt = App.projekt;
-    const vorlage = SysM.Vorlagen.finde(vorlageId);
-    if (!vorlage) return;
-    const eltern = zielEltern(projekt, vorlage, wunschEl);
-    const neu = SysM.Vorlagen.instanziiere(projekt, vorlageId, eltern ? eltern.id : null);
+    let neu = null;
+    if (kennung.startsWith("modul:")) {
+      const modul = SysM.Bibliothek.findeModul(App.bibliothek.module, kennung.slice(6));
+      if (!modul) return;
+      const eltern = zielEltern(projekt, modul.wurzel, wunschEl);
+      neu = SysM.Bibliothek.einfuegen(projekt, modul, eltern ? eltern.id : null);
+    } else {
+      const vorlage = SysM.Vorlagen.finde(kennung);
+      if (!vorlage) return;
+      const eltern = zielEltern(projekt, vorlage, wunschEl);
+      neu = SysM.Vorlagen.instanziiere(projekt, kennung, eltern ? eltern.id : null);
+    }
     if (neu) {
       App.auswahl.elementId = neu.id;
       App.speichern();
@@ -134,6 +142,36 @@
     const panel = h("div", { class: "panel baukasten" },
       h("h3", {}, "Baukasten"),
       h("p", { class: "klein" }, "Anklicken fügt den Baustein bei der Auswahl ein – oder auf das Bild ziehen."));
+
+    // Zuerst die eigenen Firmenstandards – Wiederverwendung vor Neubau.
+    const standards = SysM.Bibliothek.neuesteVersionen(App.bibliothek.module);
+    const standardBlock = h("details", { class: "baukasten-gruppe", open: "" },
+      h("summary", {}, "Firmenstandard"),
+      h("p", { class: "klein" }, "Ihre freigegebenen Module – überall derselbe Schnitt (siehe Bibliothek)."));
+    const standardRaster = h("div", { class: "baukasten-raster" });
+    for (const modul of standards) {
+      const farbe = Maschinenbild.FARBEN[modul.wurzel.typ] || Maschinenbild.FARBEN.Komponente;
+      const knopf = h("button", {
+        class: "vorlage-knopf standard",
+        draggable: "true",
+        title: modul.beschreibung || modul.name,
+        onclick: () => bausteinEinfuegen("modul:" + modul.id, null),
+      },
+        h("span", {
+          class: "vorlage-wuerfel",
+          style: `background:${farbe[0]};border-color:${farbe[2]};box-shadow:2px 2px 0 ${farbe[1]};`,
+        }),
+        h("span", { class: "vorlage-name" }, modul.name, h("span", { class: "vorlage-version" }, " v" + modul.version)),
+      );
+      knopf.addEventListener("dragstart", (ereignis) => {
+        ereignis.dataTransfer.setData("text/vorlage", "modul:" + modul.id);
+        ereignis.dataTransfer.effectAllowed = "copy";
+      });
+      standardRaster.append(knopf);
+    }
+    if (!standards.length) standardRaster.append(h("p", { class: "klein" }, "Noch keine – bewährte Bausteine unten im Detail veröffentlichen."));
+    standardBlock.append(standardRaster);
+    panel.append(standardBlock);
 
     for (const gruppe of SysM.Vorlagen.GRUPPEN) {
       const aufklappen = gruppe.titel !== "Grundbausteine";
@@ -236,6 +274,7 @@
     detail.append(renderVerwendung(projekt, el));
     if (istKomponente) detail.append(renderSignale(projekt, el));
     detail.append(renderMerkmalwerte(projekt, el));
+    detail.append(renderStandardBlock(projekt, el));
 
     // Selten Gebrauchtes eingeklappt
     const weitere = h("details", { class: "unterblock-details" },
@@ -251,6 +290,63 @@
     return detail;
   }
 
+  // ---- Firmenstandard: Herkunft, Abweichung, Veröffentlichen ------------------
+
+  function renderStandardBlock(projekt, el) {
+    const block = h("div", { class: "unterblock" }, h("h4", {}, "Firmenstandard"));
+
+    if (el.herkunft) {
+      const modul = SysM.Bibliothek.findeModul(App.bibliothek.module, el.herkunft.modulId);
+      if (!modul) {
+        block.append(h("p", { class: "klein" },
+          `Stammt aus „${el.herkunft.name}“ v${el.herkunft.version} – dieser Standard ist in der Bibliothek nicht mehr vorhanden.`));
+      } else {
+        const pruefung = SysM.Bibliothek.vergleiche(projekt, el.id, modul);
+        if (pruefung.gleich) {
+          block.append(h("p", {},
+            h("span", { class: "abweichung ok" }, "✓ entspricht dem Standard "),
+            `„${modul.name}“ v${el.herkunft.version}.`));
+        } else {
+          block.append(h("p", {},
+            h("span", { class: "abweichung warn" }, "⚠ weicht vom Standard ab "),
+            `(„${modul.name}“ v${el.herkunft.version}, ${pruefung.unterschiede.length} Unterschiede):`));
+          const listeEl = h("ul", { class: "abweichungs-liste" });
+          for (const u of pruefung.unterschiede.slice(0, 8)) listeEl.append(h("li", {}, u));
+          if (pruefung.unterschiede.length > 8) listeEl.append(h("li", {}, "…"));
+          block.append(listeEl);
+          block.append(h("p", { class: "klein" },
+            "Gewollt? Dann als neue Version veröffentlichen – sonst zurückbauen. So bleibt „Standard“ wirklich Standard."));
+        }
+      }
+    } else {
+      block.append(h("p", { class: "klein" },
+        "Dieser Baustein ist projektspezifisch. Bewährt er sich, veröffentlichen Sie ihn – dann steht er allen Projekten im Baukasten zur Verfügung."));
+    }
+
+    if (el.elternId) {
+      block.append(h("button", {
+        class: "knopf leise",
+        onclick: () => {
+          const basisName = el.herkunft ? el.herkunft.name : el.name;
+          const name = prompt("Name des Standards:", basisName);
+          if (!name) return;
+          const vorhanden = App.bibliothek.module.filter((m) => m.name === name);
+          const version = vorhanden.length ? Math.max(...vorhanden.map((m) => m.version || 1)) + 1 : 1;
+          const modul = SysM.Bibliothek.schnappschuss(projekt, el.id, {
+            name, version,
+            stand: new Date().toLocaleDateString("de-DE"),
+            beschreibung: el.kommentar || "",
+          });
+          App.bibliothek.module.push(modul);
+          el.herkunft = { modulId: modul.id, name: modul.name, version: modul.version };
+          App.speichern();
+          App.render();
+        },
+      }, el.herkunft ? "Als neue Version veröffentlichen" : "Als Firmenstandard veröffentlichen"));
+    }
+    return block;
+  }
+
   // ---- Verwendung / Options-Bedingung ---------------------------------------
 
   function renderVerwendung(projekt, el) {
@@ -263,7 +359,7 @@
 
     if (el.verwendung === "option") {
       if (!projekt.merkmale.length) {
-        block.append(leererHinweis("Es gibt noch keine Merkmale. Legen Sie zuerst in Schritt 2 ein Merkmal an (z. B. „Etikettierung Ja/Nein“)."));
+        block.append(leererHinweis("Es gibt noch keine Merkmale. Legen Sie zuerst unter „Merkmale“ eines an (z. B. „Etikettierung Ja/Nein“)."));
       } else {
         block.append(h("p", { class: "klein" }, "Dieser Baustein ist enthalten, wenn gilt:"));
         block.append(renderBedingungsZeilen(projekt, el.bedingung, () => { App.speichern(); App.render(); }));
@@ -368,7 +464,7 @@
       tabelle.append(rumpf);
       block.append(tabelle);
     } else {
-      block.append(h("p", { class: "klein" }, "Welche Signale tauscht diese Komponente mit der Steuerung aus? Aus jedem Signal entsteht in Schritt 5 ein PLC-Tag."));
+      block.append(h("p", { class: "klein" }, "Welche Signale tauscht diese Komponente mit der Steuerung aus? Aus jedem Signal entsteht unter „Kennzeichnung“ ein PLC-Tag."));
     }
 
     block.append(h("button", {
@@ -378,5 +474,5 @@
     return block;
   }
 
-  Tabs.struktur = { titel: "1 · Struktur", render, renderBedingungsZeilen };
+  Tabs.struktur = { titel: "Struktur", render, renderBedingungsZeilen };
 })();

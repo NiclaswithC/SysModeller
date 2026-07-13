@@ -1,8 +1,8 @@
 "use strict";
 /*
- * Reiter „2 · Merkmale“: der Merkmal-Katalog. Hier wird definiert, WAS es
+ * Reiter „Merkmale“ (Engineering): der Merkmal-Katalog. Hier wird definiert, WAS es
  * gibt (Name, Typ, Einheit, erlaubte Werte) – die WERTE stehen an den
- * Elementen (Schritt 1) bzw. entstehen je Variante (Schritt 4).
+ * Elementen (Struktur) bzw. entstehen je Anfrage (Angebot).
  */
 (function () {
   const { h, select, feld, textEingabe, wertEingabe, infoBox, badge, leererHinweis } = UI;
@@ -41,7 +41,7 @@
     wurzel.append(infoBox(
       "Ein Merkmal wird hier einmal sauber definiert und überall wiederverwendet – ",
       "das Merkmal (z. B. „Taktleistung“) bleibt dabei getrennt von seinem Wert (z. B. „90 1/min“). ",
-      "Merkmale, die als „Frage an den Vertrieb“ markiert sind, bilden später den Konfigurationsbogen in Schritt 4."));
+      "Merkmale, die als „Frage an den Vertrieb“ markiert sind, bilden die Kundenanfrage im Angebots-Reiter."));
 
     const liste = h("div", { class: "baum" });
     for (const m of projekt.merkmale) {
@@ -139,7 +139,7 @@
           textEingabe(mk.min, (w) => { mk.min = w.trim(); App.speichern(); App.render(); }, { placeholder: "von", class: "sehr-schmal" }),
           h("span", { class: "klein" }, "bis"),
           textEingabe(mk.max, (w) => { mk.max = w.trim(); App.speichern(); App.render(); }, { placeholder: "bis", class: "sehr-schmal" })),
-        "Optional. Wenn gesetzt, wird die Frage in Schritt 4 als Schieberegler angezeigt."));
+        "Optional. Wenn gesetzt, wird die Frage im Angebot als Schieberegler angezeigt."));
     }
 
     detail.append(h("div", { class: "unterblock" },
@@ -148,7 +148,7 @@
           type: "checkbox", checked: mk.istKonfiguration,
           onchange: (e) => { mk.istKonfiguration = e.target.checked; App.speichern(); App.render(); },
         }),
-        " Frage an den Vertrieb/Kunden – wird beim Zusammenstellen einer Variante abgefragt (Schritt 4)."),
+        " Frage an den Vertrieb/Kunden – wird bei jeder Anfrage im Angebots-Reiter abgefragt."),
     ));
 
     detail.append(feld("Standardwert",
@@ -169,5 +169,5 @@
     return detail;
   }
 
-  Tabs.merkmale = { titel: "2 · Merkmale", render };
+  Tabs.merkmale = { titel: "Merkmale", render };
 })();

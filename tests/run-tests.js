@@ -10,6 +10,7 @@ const Sysml = require("../app/js/core/sysml.js");
 const Exporte = require("../app/js/core/exporte.js");
 const Beispiel = require("../app/js/core/beispiel.js");
 const Vorlagen = require("../app/js/core/vorlagen.js");
+const Bibliothek = require("../app/js/core/bibliothek.js");
 
 let ok = 0;
 let fehler = 0;
@@ -91,6 +92,89 @@ console.log("Baukasten …");
   gleich(kopieKinder.length, 2, "Duplizieren: Kinder mitkopiert");
   pruefe(kopieKinder[0].signale[0].id !== kinder[0].signale[0].id, "Duplizieren: neue Signal-IDs");
   gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Duplizieren: Modell bleibt gültig");
+}
+
+// ---- Firmenstandard-Bibliothek ----------------------------------------------
+console.log("Bibliothek …");
+{
+  const projekt = Beispiel.erzeuge();
+
+  // Veröffentlichen: Schnappschuss des Transportbands (nutzt keine Merkmale).
+  const modul = Bibliothek.schnappschuss(projekt, "el-trb", {
+    name: "Transportband Standard", version: 1, beschreibung: "Test", stand: "01.01.2026",
+  });
+  gleich(modul.wurzel.name, "Transportband Standard", "Schnappschuss: Modulname am Wurzelknoten");
+  gleich(modul.wurzel.kinder.length, 2, "Schnappschuss: Kinder enthalten");
+  gleich(modul.wurzel.kinder[0].signale.length, 2, "Schnappschuss: Signale enthalten");
+
+  // Schnappschuss mit Merkmalen: Dosierstation trägt Werte für Pumpentyp/Nennweite.
+  const dosModul = Bibliothek.schnappschuss(projekt, "el-dos", { name: "Dosierstation Standard", version: 1 });
+  pruefe(dosModul.merkmale.some((m) => m.name === "Pumpentyp"), "Schnappschuss: verwendete Merkmale eingesammelt");
+
+  // Einfügen in ein LEERES Projekt: Merkmale werden angelegt, Werte verdrahtet.
+  const ziel = Model.neuesProjekt("Neu");
+  const instanz = Bibliothek.einfuegen(ziel, dosModul, ziel.elemente[0].id);
+  pruefe(instanz.herkunft && instanz.herkunft.modulId === dosModul.id, "Einfügen: Herkunft vermerkt");
+  pruefe(ziel.merkmale.some((m) => m.name === "Pumpentyp"), "Einfügen: fehlendes Merkmal angelegt");
+  const pumpe = ziel.elemente.find((e) => e.name === "Dosierpumpe");
+  const pumpentyp = ziel.merkmale.find((m) => m.name === "Pumpentyp");
+  gleich(pumpe.merkmalwerte[pumpentyp.id], "Standard", "Einfügen: Merkmalwert über Namen verdrahtet");
+  gleich(Model.validieren(ziel).filter((b) => b.stufe === "Fehler").length, 0, "Einfügen: Zielprojekt gültig");
+
+  // Zweites Einfügen: Merkmal wird wiedererkannt, nicht doppelt angelegt.
+  const anzahlMerkmale = ziel.merkmale.length;
+  Bibliothek.einfuegen(ziel, dosModul, ziel.elemente[0].id);
+  gleich(ziel.merkmale.length, anzahlMerkmale, "Einfügen: Merkmale nicht doppelt");
+
+  // Abweichungs-Prüfung: frisch eingefügt = Standard; nach Änderung = Abweichung.
+  const gleichPruefung = Bibliothek.vergleiche(ziel, instanz.id, dosModul);
+  pruefe(gleichPruefung.gleich, "Vergleich: frische Instanz entspricht dem Standard");
+  pumpe.signale.push(Model.neuesSignal({ name: "Extra", richtung: "E", datentyp: "Bool" }));
+  const abweichung = Bibliothek.vergleiche(ziel, instanz.id, dosModul);
+  pruefe(!abweichung.gleich, "Vergleich: Änderung wird erkannt");
+  pruefe(abweichung.unterschiede.some((u) => u.includes("Signale")), "Vergleich: Unterschied benennt Signale");
+
+  // Instanzname darf abweichen (Nummerierung).
+  instanz.name = "Dosierstation Standard 7";
+  pumpe.signale.pop();
+  pruefe(Bibliothek.vergleiche(ziel, instanz.id, dosModul).gleich, "Vergleich: Wurzelname wird ignoriert");
+
+  // Merkmal-Wiedererkennung über IRDI: gleicher IRDI, anderer Name.
+  const irdiModul = Bibliothek.schnappschuss(projekt, "el-dos", { name: "IRDI-Test", version: 1 });
+  const irdiZiel = Model.neuesProjekt("I");
+  irdiZiel.merkmale.push(Model.neuesMerkmal({ name: "Ganz anderer Name", typ: "zahl", irdi: "0173-1#02-AAE916#005" }));
+  // Taktleistung kommt in der Dosierstation nicht vor – erweitere um Bedingung mit Taktleistung:
+  gleich(irdiModul.merkmale.some((m) => m.irdi === "0173-1#02-AAE916#005"), false, "(Dosiermodul nutzt Taktleistung nicht)");
+
+  // Neueste Versionen je Name.
+  const versionen = Bibliothek.neuesteVersionen([
+    { id: "a", name: "X", version: 1 }, { id: "b", name: "X", version: 3 }, { id: "c", name: "Y", version: 1 },
+  ]);
+  gleich(versionen.length, 2, "Neueste Versionen: je Name eine");
+  gleich(versionen.find((m) => m.name === "X").version, 3, "Neueste Versionen: höchste gewinnt");
+
+  // Startbestand
+  const start = Bibliothek.beispielModule("01.01.2026");
+  gleich(start.length, 2, "Beispielbibliothek: zwei Module");
+  pruefe(start[0].wurzel.kinder.length > 0, "Beispielbibliothek: Module mit Inhalt");
+}
+
+{
+  // IRDI-Wiedererkennung: Modul mit Merkmal (per Bedingung) trifft auf Projekt
+  // mit gleichem IRDI unter anderem Namen -> kein Duplikat, Bedingung verdrahtet.
+  const quelle = Beispiel.erzeuge();
+  const modul = Bibliothek.schnappschuss(quelle, "el-eti", { name: "Etikettierer Standard", version: 1 });
+  pruefe(modul.merkmale.some((m) => m.name === "Etikettierung"), "Options-Modul: Bedingungs-Merkmal eingesammelt");
+
+  const ziel = Model.neuesProjekt("Z");
+  const vorhanden = Model.neuesMerkmal({ name: "Labeling", typ: "jaNein", irdi: "", standardwert: "nein" });
+  ziel.merkmale.push(vorhanden);
+  const instanz = Bibliothek.einfuegen(ziel, modul, ziel.elemente[0].id);
+  const etikettierung = ziel.merkmale.find((m) => m.name === "Etikettierung");
+  pruefe(!!etikettierung, "Options-Modul: Merkmal per Name angelegt (kein IRDI-Treffer)");
+  gleich(instanz.bedingung[0].merkmalId, etikettierung.id, "Options-Modul: Bedingung auf Projekt-Merkmal verdrahtet");
+  const ergebnis = Regeln.auswerten(ziel, { [etikettierung.id]: "ja" });
+  gleich(ergebnis.elementStatus[instanz.id].effektivEnthalten, true, "Options-Modul: Option funktioniert im Zielprojekt");
 }
 
 // ---- Regel-Engine ----------------------------------------------------------

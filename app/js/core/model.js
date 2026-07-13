@@ -105,7 +105,8 @@
   function neueKonfiguration(vorgabe) {
     return Object.assign({
       id: neueId("kf"),
-      name: "Neue Konfiguration",
+      name: "Neue Anfrage",
+      kunde: "",            // wer fragt an? (Vertriebssicht)
       antworten: {},        // { merkmalId: wert }
       kommentar: "",
     }, vorgabe || {});
