@@ -1,0 +1,328 @@
+/* SysModeller – Stylesheet. Ruhig, kontrastreich, gut lesbar. */
+
+:root {
+  --akzent: #1f5fa8;
+  --akzent-hell: #e8f0fa;
+  --tinte: #1d2530;
+  --tinte-leise: #5a6675;
+  --linie: #d7dde5;
+  --flaeche: #f4f6f8;
+  --panel: #ffffff;
+  --gut: #1d7a3d;
+  --warnung-grund: #fdf3e0;
+  --warnung-rand: #d9a63f;
+  --fehler-grund: #fbe9e9;
+  --fehler-rand: #c04545;
+  --hinweis-grund: #e8f0fa;
+  --hinweis-rand: #1f5fa8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  font-size: 15px;
+  color: var(--tinte);
+  background: var(--flaeche);
+}
+
+code { font-family: Consolas, "Courier New", monospace; font-size: 0.92em; }
+
+/* ---- Kopfzeile ---- */
+.kopf {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--linie);
+  flex-wrap: wrap;
+}
+.marke { display: flex; align-items: center; gap: 10px; }
+.logo { font-size: 30px; }
+.kopf h1 { margin: 0; font-size: 20px; letter-spacing: 0.3px; }
+.untertitel { margin: 0; font-size: 12.5px; color: var(--tinte-leise); }
+.kopf-mitte { flex: 1; min-width: 220px; }
+.projekt-name {
+  width: 100%;
+  max-width: 420px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+}
+.projekt-name:hover, .projekt-name:focus { border-color: var(--linie); background: var(--panel); }
+.kopf-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- Reiter ---- */
+.reiter {
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--linie);
+  overflow-x: auto;
+}
+.reiter-knopf {
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: none;
+  padding: 9px 16px;
+  font-size: 14.5px;
+  color: var(--tinte-leise);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  white-space: nowrap;
+}
+.reiter-knopf:hover { color: var(--tinte); background: var(--flaeche); }
+.reiter-knopf.aktiv {
+  color: var(--akzent);
+  font-weight: 600;
+  background: var(--flaeche);
+  border-color: var(--linie);
+  position: relative;
+  top: 1px;
+}
+
+/* ---- Inhalt ---- */
+.inhalt { padding: 18px 20px 60px; max-width: 1500px; margin: 0 auto; }
+
+.info-box {
+  background: var(--hinweis-grund);
+  border-left: 4px solid var(--hinweis-rand);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.info-box h3 { margin-top: 0; }
+.info-box ul { margin: 8px 0; padding-left: 22px; }
+.info-box li { margin: 4px 0; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.panel h3 { margin: 0 0 10px; font-size: 16px; }
+.panel h4 { margin: 0 0 8px; font-size: 14.5px; }
+.panel-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.panel-kopf h3 { margin: 0; }
+
+.split { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.split > .panel { flex: 1 1 340px; min-width: 320px; }
+.split > .panel.detail { flex: 2 1 480px; }
+.split > .panel.schmal { flex: 1 1 300px; }
+
+/* ---- Baum / Listen ---- */
+.baum { display: flex; flex-direction: column; gap: 2px; max-height: 560px; overflow-y: auto; }
+.baum-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14.5px;
+  color: var(--tinte);
+}
+.baum-zeile:hover { background: var(--flaeche); }
+.baum-zeile.ausgewaehlt { background: var(--akzent-hell); border-color: var(--akzent); }
+.baum-name { font-weight: 500; }
+.baum-bmk { margin-left: auto; color: var(--tinte-leise); font-family: Consolas, monospace; font-size: 12.5px; }
+
+.badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  color: var(--tinte-leise);
+  white-space: nowrap;
+}
+.badge.typ-anlage { background: #e3ecf7; border-color: #9db8d9; color: #1f4d80; }
+.badge.typ-teilanlage { background: #e3f2ef; border-color: #93c6bb; color: #1d5c4f; }
+.badge.typ-station { background: #eae7f6; border-color: #b1a6dd; color: #4a3d8f; }
+.badge.typ-baugruppe { background: #f7efe1; border-color: #d9bd85; color: #7a5c17; }
+.badge.typ-komponente { background: #f0f0f0; border-color: #c4c4c4; color: #4b4b4b; }
+.badge.typ-option { background: #fdf3e0; border-color: var(--warnung-rand); color: #7a5c17; }
+.badge.typ-merkmal { background: #e8f0fa; border-color: #9db8d9; color: #1f4d80; }
+.badge.typ-inaktiv { background: #f0f0f0; color: #888; }
+
+/* ---- Formulare ---- */
+.feld { display: block; margin-bottom: 12px; }
+.feld-name { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+.feld-hinweis { display: block; font-size: 12.5px; color: var(--tinte-leise); margin-top: 3px; line-height: 1.4; }
+
+input[type="text"], select, textarea {
+  font: inherit;
+  padding: 7px 9px;
+  border: 1px solid var(--linie);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--tinte);
+  max-width: 100%;
+}
+input[type="text"] { width: min(420px, 100%); }
+input.sehr-schmal { width: 70px; }
+input.breit { width: min(560px, 100%); flex: 1; }
+textarea { width: 100%; max-width: 640px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent-hell); border-color: var(--akzent); }
+
+.radio { display: block; margin: 6px 0; cursor: pointer; }
+
+.knopf {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--akzent);
+  background: var(--akzent);
+  color: #fff;
+  cursor: pointer;
+}
+.knopf:hover { filter: brightness(1.1); }
+.knopf.leise { background: #fff; color: var(--akzent); }
+.knopf.leise:hover { background: var(--akzent-hell); }
+.knopf.gefahr { background: #fff; color: var(--fehler-rand); border-color: var(--fehler-rand); }
+.knopf.gefahr:hover { background: var(--fehler-grund); }
+.knopf-reihe { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.unterblock {
+  border-top: 1px solid var(--linie);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.kennzeichen-anzeige {
+  background: var(--flaeche);
+  border: 1px dashed var(--linie);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.kennzeichen-anzeige strong { font-family: Consolas, monospace; }
+.kennzeichen-anzeige .feld-hinweis { display: inline; }
+
+.bedingungen { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.bedingung-zeile, .aktion-zeile {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.bedingung-zeile input[type="text"], .aktion-zeile input[type="text"] { width: 160px; }
+.aktion-zeile input.breit { width: 280px; }
+
+/* ---- Tabellen ---- */
+.tabelle { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tabelle th, .tabelle td { border: 1px solid var(--linie); padding: 6px 9px; text-align: left; vertical-align: middle; }
+.tabelle th { background: var(--flaeche); font-size: 13px; }
+.tabelle tr.nicht-enthalten td { color: #a0a7b0; }
+.tabelle input[type="text"], .tabelle select { padding: 4px 6px; width: auto; min-width: 90px; }
+.tabellen-rollen { overflow-x: auto; }
+
+/* ---- Meldungen / Ergebnis ---- */
+.meldung { padding: 9px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid; line-height: 1.4; }
+.meldung-hinweis { background: var(--hinweis-grund); border-color: var(--hinweis-rand); }
+.meldung-warnung { background: var(--warnung-grund); border-color: var(--warnung-rand); }
+.meldung-fehler { background: var(--fehler-grund); border-color: var(--fehler-rand); }
+
+.gut { color: var(--gut); font-weight: 600; }
+.klein { font-size: 12.5px; color: var(--tinte-leise); line-height: 1.45; }
+.leer-hinweis {
+  padding: 14px;
+  color: var(--tinte-leise);
+  background: var(--flaeche);
+  border: 1px dashed var(--linie);
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.ergebnis-zeile { padding: 3px 0; font-size: 14.5px; }
+.ergebnis-zeile.nicht-enthalten { color: #a0a7b0; }
+.ergebnis-symbol { display: inline-block; width: 20px; font-weight: 700; }
+.ergebnis-zeile .ergebnis-symbol { color: var(--gut); }
+.ergebnis-zeile.nicht-enthalten .ergebnis-symbol { color: var(--fehler-rand); }
+.ergebnis-grund { font-size: 12.5px; color: var(--tinte-leise); }
+
+.protokoll { margin-top: 14px; }
+.protokoll summary { cursor: pointer; color: var(--akzent); font-weight: 600; }
+.protokoll ol { margin: 10px 0 0; padding-left: 26px; }
+.protokoll li { margin: 4px 0; font-size: 13.5px; }
+
+.einstellungs-reihe { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+
+/* ---- Überblick ---- */
+.hero { margin: 6px 0 18px; max-width: 900px; }
+.hero h2 { margin: 0 0 8px; font-size: 22px; }
+.hero p { font-size: 15.5px; line-height: 1.55; }
+
+.schritt-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.schritt-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--tinte);
+}
+.schritt-karte:hover { border-color: var(--akzent); box-shadow: 0 2px 8px rgba(31, 95, 168, 0.12); }
+.schritt-nr {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--akzent);
+  color: #fff;
+  font-weight: 700;
+}
+.schritt-titel { font-weight: 700; font-size: 15px; }
+.schritt-text { font-size: 13px; color: var(--tinte-leise); line-height: 1.45; }
+
+/* ---- Übergabe ---- */
+.export-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.export-karte {
+  background: var(--panel);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.export-karte h4 { margin: 0; }
+.export-karte p { margin: 0; font-size: 13.5px; line-height: 1.45; }
+.export-karte .knopf { align-self: flex-start; }
