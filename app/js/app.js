@@ -11,7 +11,7 @@
   // Navigation entlang des Maschinenbau-Prozesses, nicht entlang des Werkzeugs.
   const REITER_GRUPPEN = [
     { titel: "", tabs: ["ueberblick"] },
-    { titel: "Vertrieb", tabs: ["prozess", "angebot"] },
+    { titel: "Vertrieb", tabs: ["prozess", "layout", "angebot"] },
     { titel: "Engineering", tabs: ["struktur", "merkmale", "regeln"] },
     { titel: "Standards", tabs: ["bibliothek"] },
     { titel: "Übergabe", tabs: ["kennzeichnung", "uebergabe"] },

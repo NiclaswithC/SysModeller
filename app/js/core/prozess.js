@@ -81,6 +81,11 @@
         station = Model.neuesElement({ name: schritt.name, typ: "Station", elternId: wurzel.id });
         station.generiert = true;
         station.herkunftFunktion = { art: "schritt", schrittId: schritt.id };
+        // Startposition im 2D-Layout: rechts neben dem bisher letzten Modul.
+        const belegteX = Model.kinder(projekt, wurzel.id)
+          .filter((e) => e.layout && typeof e.layout.x === "number")
+          .map((e) => e.layout.x);
+        station.layout = { x: belegteX.length ? Math.max(...belegteX) + 7 : 0, y: 0 };
         projekt.elemente.push(station);
         bericht.push(`Station „${schritt.name}“ angelegt.`);
       }
@@ -137,14 +142,19 @@
 
     // 3. Reihenfolge: generierte Stationen in Prozessfolge, Handangelegtes danach.
     const schrittFolge = new Map(projekt.prozess.map((s, i) => [s.id, i]));
+    ordneWurzelkinder(projekt, wurzel, (el) =>
+      el.generiert && el.herkunftFunktion && schrittFolge.has(el.herkunftFunktion.schrittId)
+        ? schrittFolge.get(el.herkunftFunktion.schrittId) : 10000);
+
+    if (!bericht.length) bericht.push("Die Struktur war bereits auf dem Stand des Prozesses.");
+    return bericht;
+  }
+
+  /** Wurzelkinder stabil nach einem Sortierschlüssel ordnen (Unterbäume bleiben intakt). */
+  function ordneWurzelkinder(projekt, wurzel, schluessel) {
+    const Model = dep("Model", "./model.js");
     const kinder = Model.kinder(projekt, wurzel.id);
-    const sortiert = kinder.slice().sort((a, b) => {
-      const ia = a.generiert && a.herkunftFunktion && schrittFolge.has(a.herkunftFunktion.schrittId)
-        ? schrittFolge.get(a.herkunftFunktion.schrittId) : 10000;
-      const ib = b.generiert && b.herkunftFunktion && schrittFolge.has(b.herkunftFunktion.schrittId)
-        ? schrittFolge.get(b.herkunftFunktion.schrittId) : 10000;
-      return ia - ib;
-    });
+    const sortiert = kinder.slice().sort((a, b) => schluessel(a) - schluessel(b));
     const neuFolge = [];
     function absteigen(el) {
       neuFolge.push(el);
@@ -154,9 +164,21 @@
     for (const kind of sortiert) absteigen(kind);
     for (const el of projekt.elemente) if (!neuFolge.includes(el)) neuFolge.push(el);
     projekt.elemente = neuFolge;
+  }
 
-    if (!bericht.length) bericht.push("Die Struktur war bereits auf dem Stand des Prozesses.");
-    return bericht;
+  /**
+   * Übernimmt die 2D-Layout-Reihenfolge (links nach rechts, dann oben nach
+   * unten) in die Strukturreihenfolge – damit folgt auch die Nummerierung
+   * der Kennzeichen der Halle.
+   */
+  function reihenfolgeAusLayout(projekt) {
+    const Model = dep("Model", "./model.js");
+    const wurzel = projekt.elemente.find((e) => !e.elternId);
+    if (!wurzel) return;
+    ordneWurzelkinder(projekt, wurzel, (el) =>
+      el.layout && typeof el.layout.x === "number"
+        ? el.layout.x + el.layout.y * 0.001
+        : 100000);
   }
 
   /** ETO-Hüllen (Sonderlösungen) im wirksamen Umfang. */
@@ -165,7 +187,7 @@
       (!elementStatus || !elementStatus[e.id] || elementStatus[e.id].effektivEnthalten));
   }
 
-  const api = { neuerSchritt, neuerFunktionsEintrag, generierteStation, erzeugeStruktur, etoElemente };
+  const api = { neuerSchritt, neuerFunktionsEintrag, generierteStation, erzeugeStruktur, etoElemente, reihenfolgeAusLayout };
 
   ns.Prozess = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

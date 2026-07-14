@@ -36,6 +36,7 @@ daher nicht veralten.
   "signale": [                       // nur Komponente: Grundlage der PLC-Tags
     { "id": "sg-1", "name": "Freigabe", "richtung": "A", "datentyp": "Bool" }
   ],
+  "layout": { "x": 7, "y": 0 },   // nur oberste Module: Position im 2D-Hallenlayout (Rastereinheiten)
   "kommentar": ""
 }
 ```

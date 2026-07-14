@@ -73,7 +73,7 @@
         },
         // -- Zuführung ------------------------------------------------------
         {
-          id: "el-zuf", name: "Zuführung", typ: "Station", elternId: "el-abf",
+          id: "el-zuf", name: "Zuführung", typ: "Station", elternId: "el-abf", layout: { x: 0, y: 0 },
           kuerzel: "ZUF", produktKlasse: "", ort: "F1", verwendung: "standard",
           bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
         },
@@ -101,7 +101,7 @@
         },
         // -- Dosierstation ---------------------------------------------------
         {
-          id: "el-dos", name: "Dosierstation", typ: "Station", elternId: "el-abf",
+          id: "el-dos", name: "Dosierstation", typ: "Station", elternId: "el-abf", layout: { x: 7, y: 0 },
           kuerzel: "DOS", produktKlasse: "", ort: "F1", verwendung: "standard",
           bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
         },
@@ -134,7 +134,7 @@
         },
         // -- Verschließer -----------------------------------------------------
         {
-          id: "el-ver", name: "Verschließer", typ: "Station", elternId: "el-abf",
+          id: "el-ver", name: "Verschließer", typ: "Station", elternId: "el-abf", layout: { x: 13.5, y: 0 },
           kuerzel: "VER", produktKlasse: "", ort: "F1", verwendung: "standard",
           bedingung: [], merkmalwerte: {}, signale: [], kommentar: "",
         },
@@ -154,7 +154,7 @@
         },
         // -- Etikettierer (Option) --------------------------------------------
         {
-          id: "el-eti", name: "Etikettierer", typ: "Station", elternId: "el-abf",
+          id: "el-eti", name: "Etikettierer", typ: "Station", elternId: "el-abf", layout: { x: 19, y: 0 },
           kuerzel: "ETI", produktKlasse: "", ort: "F2", verwendung: "option",
           bedingung: [{ merkmalId: "mk-etikett", op: "=", wert: "ja" }],
           merkmalwerte: {}, signale: [],
@@ -176,7 +176,7 @@
         },
         // -- Steuerung ---------------------------------------------------------
         {
-          id: "el-stg", name: "Steuerung", typ: "Station", elternId: "el-abf",
+          id: "el-stg", name: "Steuerung", typ: "Station", elternId: "el-abf", layout: { x: 8, y: 6 },
           kuerzel: "STG", produktKlasse: "", ort: "S1", verwendung: "standard",
           bedingung: [], merkmalwerte: {}, signale: [],
           kommentar: "Schaltschrank.",

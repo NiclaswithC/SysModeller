@@ -44,7 +44,15 @@
     return el;
   }
 
-  /** Grundfläche (Breite/Tiefe) eines Elements samt Kind-Positionen. */
+  function hatLayout(el) {
+    return el.layout && typeof el.layout.x === "number" && typeof el.layout.y === "number";
+  }
+
+  /**
+   * Grundfläche (Breite/Tiefe) eines Elements samt Kind-Positionen.
+   * Auf der obersten Ebene gelten die 2D-Layout-Positionen der Module
+   * (Reiter „Layout“); Module ohne Position reihen sich dahinter auf.
+   */
   function fussabdruck(projekt, el) {
     const Model = SysM.Model;
     const kinder = Model.kinder(projekt, el.id);
@@ -53,13 +61,28 @@
       return { w: 2.4, d: 1.7, kinder: [] };
     }
     const teile = kinder.map((k) => ({ el: k, fp: fussabdruck(projekt, k) }));
-    let maxBreite;
+
     if (!el.elternId) {
-      maxBreite = Infinity; // oberste Ebene: eine Reihe = die Linie
-    } else {
-      const flaeche = teile.reduce((summe, t) => summe + (t.fp.w + ABSTAND) * (t.fp.d + ABSTAND), 0);
-      maxBreite = Math.max(Math.sqrt(flaeche) * 1.5, ...teile.map((t) => t.fp.w));
+      const positionen = [];
+      let maxX = 0;
+      let maxY = 0;
+      for (const t of teile.filter((t) => hatLayout(t.el))) {
+        positionen.push({ el: t.el, fp: t.fp, x: RAND + t.el.layout.x, y: RAND + t.el.layout.y });
+        maxX = Math.max(maxX, t.el.layout.x + t.fp.w);
+        maxY = Math.max(maxY, t.el.layout.y + t.fp.d);
+      }
+      let x = positionen.length ? maxX + ABSTAND : 0;
+      for (const t of teile.filter((t) => !hatLayout(t.el))) {
+        positionen.push({ el: t.el, fp: t.fp, x: RAND + x, y: RAND });
+        x += t.fp.w + ABSTAND;
+        maxX = Math.max(maxX, x - ABSTAND);
+        maxY = Math.max(maxY, t.fp.d);
+      }
+      return { w: maxX + 2 * RAND, d: maxY + 2 * RAND, kinder: positionen };
     }
+
+    const flaeche = teile.reduce((summe, t) => summe + (t.fp.w + ABSTAND) * (t.fp.d + ABSTAND), 0);
+    const maxBreite = Math.max(Math.sqrt(flaeche) * 1.5, ...teile.map((t) => t.fp.w));
     let x = 0;
     let y = 0;
     let zeilenTiefe = 0;
@@ -268,5 +291,5 @@
     return div;
   }
 
-  window.Maschinenbild = { render, legende, FARBEN };
+  window.Maschinenbild = { render, legende, FARBEN, fussabdruck, hatLayout };
 })();

@@ -31,6 +31,7 @@
 
   const PROZESS = [
     { schritt: "Anfrage", wer: "Vertrieb", was: "Den Prozess des Kunden als Schritte aufnehmen; je Schritt Funktion und Lösungsprinzip wählen (z. B. „Spannen: pneumatisch“) – dahinter stehen die Firmenstandards, Lücken werden als Sonderlösung (ETO) sichtbar." },
+    { schritt: "Layout", wer: "Vertrieb", was: "Die Module im 2D-Hallenlayout anordnen – 3D-Bild, Struktur und Parameter hängen am selben Modell und ziehen live mit." },
     { schritt: "Angebot", wer: "Vertrieb", was: "Angebotsmappe per Klick: Maschinenbild, Lieferumfang, technische Daten, Hinweise – eine Datei für den Kunden." },
     { schritt: "Auftrag → Engineering", wer: "Mechanik / Elektrik / Software", was: "Dieselbe Konfiguration liefert jedem Gewerk seine Sicht: Strukturliste, BMK-Liste, PLC-Tags – ohne Neuerfassung." },
     { schritt: "Standardpflege", wer: "Engineering", was: "Bewährte Bausteine in die Bibliothek veröffentlichen; Erfahrungen als Regeln festhalten – das nächste Angebot kann sie schon." },

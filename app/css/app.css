@@ -378,6 +378,46 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent-hell
 .badge.typ-eto { background: #fbe9e9; border-color: var(--fehler-rand); color: var(--fehler-rand); }
 .herkunft-zeile { margin: -6px 0 10px; }
 
+/* ---- 2D-Hallenlayout ---- */
+.ly-svg {
+  width: 100%;
+  max-height: 460px;
+  background: #fbfcfe;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  display: block;
+  touch-action: none;
+}
+.ly-station { cursor: grab; }
+.ly-station.zieht { cursor: grabbing; }
+.ly-station rect:first-of-type { stroke: #8fa3ba; stroke-width: 1.5; }
+.ly-station:hover rect:first-of-type { filter: brightness(1.05); stroke: var(--akzent); }
+.ly-station.ausgewaehlt rect:first-of-type { stroke: var(--akzent); stroke-width: 3; }
+.ly-station.eto rect:first-of-type { stroke: var(--fehler-rand); stroke-dasharray: 6 4; }
+.ly-station.option rect:first-of-type { stroke: var(--warnung-rand); stroke-dasharray: 6 4; }
+.ly-kind { fill: rgba(255, 255, 255, 0.55); stroke: rgba(60, 80, 105, 0.35); pointer-events: all; }
+.ly-name {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #22303f;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.ly-ablage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: var(--warnung-grund);
+  border: 1px dashed var(--warnung-rand);
+  border-radius: 8px;
+}
+
 .mb-box.mb-eto .mb-deckel { stroke: var(--fehler-rand); stroke-dasharray: 4 3; stroke-width: 1.6; }
 .mb-legende-eto { border: 1.5px dashed var(--fehler-rand); background: #fff; }
 .umfang-chip.eto { background: var(--warnung-grund); color: #7a5c17; border-color: var(--warnung-rand); }

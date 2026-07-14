@@ -123,6 +123,10 @@
       "name": "Zuführung",
       "typ": "Station",
       "elternId": "el-abf",
+      "layout": {
+        "x": 0,
+        "y": 0
+      },
       "kuerzel": "ZUF",
       "produktKlasse": "",
       "ort": "F1",
@@ -199,6 +203,10 @@
       "name": "Dosierstation",
       "typ": "Station",
       "elternId": "el-abf",
+      "layout": {
+        "x": 7,
+        "y": 0
+      },
       "kuerzel": "DOS",
       "produktKlasse": "",
       "ort": "F1",
@@ -292,6 +300,10 @@
       "name": "Verschließer",
       "typ": "Station",
       "elternId": "el-abf",
+      "layout": {
+        "x": 13.5,
+        "y": 0
+      },
       "kuerzel": "VER",
       "produktKlasse": "",
       "ort": "F1",
@@ -348,6 +360,10 @@
       "name": "Etikettierer",
       "typ": "Station",
       "elternId": "el-abf",
+      "layout": {
+        "x": 19,
+        "y": 0
+      },
       "kuerzel": "ETI",
       "produktKlasse": "",
       "ort": "F2",
@@ -410,6 +426,10 @@
       "name": "Steuerung",
       "typ": "Station",
       "elternId": "el-abf",
+      "layout": {
+        "x": 8,
+        "y": 6
+      },
       "kuerzel": "STG",
       "produktKlasse": "",
       "ort": "S1",

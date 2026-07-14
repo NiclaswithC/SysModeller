@@ -255,10 +255,12 @@
       panel.append(bericht);
     }
 
+    panel.append(h("div", { class: "knopf-reihe" },
+      h("button", { class: "knopf", onclick: () => App.zeigeTab("layout") }, "Weiter zum Layout →"),
+    ));
     panel.append(h("p", { class: "klein" },
-      "Weiter geht es im Reiter „Angebot“: Dort werden die Parameter der gewählten Module abgefragt (Ausprägung), ",
-      "die Regeln prüfen die Machbarkeit, und die Angebotsmappe fasst alles zusammen. ",
-      "Von Hand ergänzte Elemente (z. B. aus der Struktur-Sicht) bleiben beim Aktualisieren erhalten."));
+      "Im Layout ordnen Sie die Module in der Halle an; im Angebot folgen dann Parameter, Machbarkeit ",
+      "und Angebotsmappe. Von Hand ergänzte Elemente bleiben beim Aktualisieren erhalten."));
 
     return panel;
   }

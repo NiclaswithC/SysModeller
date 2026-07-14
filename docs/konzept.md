@@ -52,6 +52,14 @@ Kundenanforderung bis zum Betriebsmittel. ETO-Anteile werden im Angebot und in
 der Angebotsmappe ausgewiesen (Aufwand!) und wandern nach Bewährung als neue
 Standards in die Bibliothek – so wird aus ETO über die Zeit CTO.
 
+Nach dem Aufbau ordnet der Vertrieb die Module im **2D-Hallenlayout** an
+(Draufsicht, ziehen mit Raster) – so, wie Maschinenbauer räumlich denken. Das
+Layout ist keine Zeichnung, sondern Teil des Modells: Das isometrische 3D-Bild,
+die Struktur und die Parameter hängen an denselben Daten und ziehen live mit;
+auf Wunsch übernimmt die Kennzeichen-Nummerierung die Layout-Reihenfolge.
+Später kann je Modul ein echtes CAD-Hüllmodell (JT/STEP) hinterlegt werden,
+ohne das Datenmodell zu ändern.
+
 Beide Einstiege bleiben möglich: **nach Prozess** (beratungsintensiv, wie oben)
 oder **nach Produktpalette** (Serienmaschinenbau: Struktur steht, es wird nur
 konfiguriert und parametriert).

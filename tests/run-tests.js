@@ -238,6 +238,40 @@ console.log("Prozess …");
   pruefe(Object.values(kz).length > 0, "Prozess: Kennzeichen berechenbar");
 }
 
+// ---- 2D-Layout ----------------------------------------------------------------
+console.log("Layout …");
+{
+  const bibliothek = Bibliothek.beispielBibliothek("01.01.2026");
+  const projekt = Model.neuesProjekt("Halle");
+  const s1 = Prozess.neuerSchritt({ name: "Zuführen" });
+  s1.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-zufuehren", loesungId: "ls-band" }));
+  const s2 = Prozess.neuerSchritt({ name: "Steuern" });
+  s2.funktionen.push(Prozess.neuerFunktionsEintrag({ funktionId: "fn-steuern", loesungId: "ls-steuer-std" }));
+  projekt.prozess.push(s1, s2);
+  Prozess.erzeugeStruktur(projekt, bibliothek);
+
+  const wurzel = projekt.elemente.find((e) => !e.elternId);
+  const stationen = Model.kinder(projekt, wurzel.id);
+  pruefe(stationen.every((st) => st.layout && typeof st.layout.x === "number"),
+    "Erzeugen: neue Stationen bekommen eine Layout-Position");
+  pruefe(stationen[1].layout.x > stationen[0].layout.x, "Erzeugen: Positionen reihen sich auf");
+
+  // Layout umsortieren: Steuerung nach links schieben -> Nummerierung folgt.
+  stationen[1].layout = { x: 0, y: 0 };
+  stationen[0].layout = { x: 10, y: 0 };
+  Prozess.reihenfolgeAusLayout(projekt);
+  const folge = Model.kinder(projekt, wurzel.id).map((e) => e.name);
+  gleich(folge[0], "Steuern", "Layout-Reihenfolge: linkes Modul zuerst");
+  gleich(folge[1], "Zuführen", "Layout-Reihenfolge: rechtes Modul danach");
+  gleich(Model.validieren(projekt).filter((b) => b.stufe === "Fehler").length, 0, "Layout: Projekt bleibt gültig");
+
+  // Elemente ohne Layout-Position bleiben hinten.
+  const manuell = Model.neuesElement({ name: "Handstation", typ: "Station", elternId: wurzel.id });
+  projekt.elemente.push(manuell);
+  Prozess.reihenfolgeAusLayout(projekt);
+  gleich(Model.kinder(projekt, wurzel.id)[2].name, "Handstation", "Layout-Reihenfolge: Unplatziertes bleibt hinten");
+}
+
 {
   // IRDI-Wiedererkennung: Modul mit Merkmal (per Bedingung) trifft auf Projekt
   // mit gleichem IRDI unter anderem Namen -> kein Duplikat, Bedingung verdrahtet.
