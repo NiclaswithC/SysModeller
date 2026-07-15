@@ -36,7 +36,12 @@ daher nicht veralten.
   "signale": [                       // nur Komponente: Grundlage der PLC-Tags
     { "id": "sg-1", "name": "Freigabe", "richtung": "A", "datentyp": "Bool" }
   ],
-  "layout": { "x": 7, "y": 0 },   // nur oberste Module: Position im 2D-Hallenlayout (Rastereinheiten)
+  "layout": { "x": 7, "y": 0 },   // nur oberste Module: Position im 2D-Hallenlayout (Meter)
+  "masse": { "b": 1.2, "t": 0.8, "h": 1.0 },   // optional: echte Maße (aus der 3D-Datei abgeleitet)
+  "grundriss": [[0,0],[1.2,0],[1.2,0.8],[0,0.8]], // optional: Draufsicht-Silhouette der 3D-Datei
+  "cad": { "dateiId": "dt-…", "dateiname": "Spanneinheit.glb" }, // optional: Verweis auf die 3D-Datei (Ablage im Browser)
+  "eto": true,                     // optional: Sonderlösung – Platzhalter für das Engineering
+  "notiz": "Kundenvorgabe …",      // optional: Notiz am Platzhalter
   "kommentar": ""
 }
 ```

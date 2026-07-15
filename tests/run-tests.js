@@ -12,6 +12,7 @@ const Beispiel = require("../app/js/core/beispiel.js");
 const Vorlagen = require("../app/js/core/vorlagen.js");
 const Bibliothek = require("../app/js/core/bibliothek.js");
 const Prozess = require("../app/js/core/prozess.js");
+const Geometrie = require("../app/js/core/geometrie.js");
 
 let ok = 0;
 let fehler = 0;
@@ -288,6 +289,34 @@ console.log("Layout …");
   gleich(instanz.bedingung[0].merkmalId, etikettierung.id, "Options-Modul: Bedingung auf Projekt-Merkmal verdrahtet");
   const ergebnis = Regeln.auswerten(ziel, { [etikettierung.id]: "ja" });
   gleich(ergebnis.elementStatus[instanz.id].effektivEnthalten, true, "Options-Modul: Option funktioniert im Zielprojekt");
+}
+
+// ---- Geometrie (Silhouette aus 3D-Daten) --------------------------------------
+console.log("Geometrie …");
+{
+  // Quadrat mit Innenpunkten -> Hülle sind die vier Ecken.
+  const punkte = [
+    { x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 1 }, { x: 0, y: 1 },
+    { x: 1, y: 0.5 }, { x: 0.5, y: 0.2 }, { x: 1.7, y: 0.9 },
+  ];
+  const huelle = Geometrie.konvexeHuelle(punkte);
+  gleich(huelle.length, 4, "Konvexe Hülle: Innenpunkte fallen weg");
+
+  const grundriss = Geometrie.grundrissAusPunkten(punkte);
+  gleich(grundriss.length, 4, "Grundriss: vier Eckpunkte");
+  pruefe(grundriss.every((p) => Array.isArray(p) && p.length === 2), "Grundriss: [x,y]-Paare");
+
+  // Viele Punkte auf einem Kreis -> Ausdünnung greift.
+  const kreis = [];
+  for (let i = 0; i < 200; i += 1) {
+    kreis.push({ x: Math.cos(i / 200 * 2 * Math.PI), y: Math.sin(i / 200 * 2 * Math.PI) });
+  }
+  pruefe(Geometrie.grundrissAusPunkten(kreis, 24).length <= 24, "Grundriss: auf 24 Punkte ausgedünnt");
+
+  const masse = Geometrie.masseAusBBox({ x: 0, y: 0, z: 0 }, { x: 1.204, y: 1.0, z: 0.8 });
+  gleich(masse.b, 1.2, "Maße: Breite gerundet");
+  gleich(masse.h, 1, "Maße: Höhe aus y");
+  gleich(masse.t, 0.8, "Maße: Tiefe aus z");
 }
 
 // ---- Regel-Engine ----------------------------------------------------------

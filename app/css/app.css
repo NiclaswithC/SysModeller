@@ -418,6 +418,23 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent-hell
   border-radius: 8px;
 }
 
+.d3-behaelter {
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f4f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.d3-behaelter canvas { display: block; }
+.ly-umriss { stroke: #8fa3ba; stroke-width: 1.5; }
+.ly-station:hover .ly-umriss { filter: brightness(1.05); stroke: var(--akzent); }
+.ly-station.ausgewaehlt .ly-umriss { stroke: var(--akzent); stroke-width: 3; }
+.ly-marke { font-size: 12px; font-weight: 700; fill: #1f4d80; pointer-events: all; }
+.ly-marke.eto { fill: var(--fehler-rand); }
+.ly-kind.eto { stroke: var(--fehler-rand); stroke-dasharray: 4 3; fill: rgba(192, 69, 69, 0.08); }
+
 .mb-box.mb-eto .mb-deckel { stroke: var(--fehler-rand); stroke-dasharray: 4 3; stroke-width: 1.6; }
 .mb-legende-eto { border: 1.5px dashed var(--fehler-rand); background: #fff; }
 .umfang-chip.eto { background: var(--warnung-grund); color: #7a5c17; border-color: var(--warnung-rand); }

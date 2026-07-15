@@ -10,6 +10,11 @@
 <body>
   <div id="app"></div>
 
+  <!-- Eingebettete Bibliothek für echte 3D-Dateien (three.js, lokal) -->
+  <script src="lib/three.min.js"></script>
+  <script src="lib/GLTFLoader.js"></script>
+  <script src="lib/OrbitControls.js"></script>
+
   <!-- Kernlogik (ohne Oberfläche, auch per Node testbar) -->
   <script src="js/core/model.js"></script>
   <script src="js/core/rules.js"></script>
@@ -19,11 +24,14 @@
   <script src="js/core/vorlagen.js"></script>
   <script src="js/core/bibliothek.js"></script>
   <script src="js/core/prozess.js"></script>
+  <script src="js/core/geometrie.js"></script>
   <script src="js/core/beispiel.js"></script>
 
   <!-- Oberfläche -->
   <script src="js/ui/common.js"></script>
   <script src="js/ui/maschinenbild.js"></script>
+  <script src="js/ui/dateispeicher.js"></script>
+  <script src="js/ui/dreid.js"></script>
   <script src="js/ui/ueberblick.js"></script>
   <script src="js/ui/prozess.js"></script>
   <script src="js/ui/layout.js"></script>

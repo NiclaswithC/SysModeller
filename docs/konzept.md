@@ -57,8 +57,12 @@ Nach dem Aufbau ordnet der Vertrieb die Module im **2D-Hallenlayout** an
 Layout ist keine Zeichnung, sondern Teil des Modells: Das isometrische 3D-Bild,
 die Struktur und die Parameter hängen an denselben Daten und ziehen live mit;
 auf Wunsch übernimmt die Kennzeichen-Nummerierung die Layout-Reihenfolge.
-Später kann je Modul ein echtes CAD-Hüllmodell (JT/STEP) hinterlegt werden,
-ohne das Datenmodell zu ändern.
+Je Modul lässt sich eine **echte 3D-Datei** hinterlegen (GLB/GLTF – aus jedem
+CAD exportierbar; STEP/JT einmalig wandeln): Maße und Draufsicht-Silhouette
+werden automatisch abgeleitet, die 3D-Ansicht zeigt das echte Modell; Module
+ohne Datei erscheinen als maßhaltige Hüllkörper, Sonderlösungen (ETO) als
+rote Platzhalter mit Notiz. Die 2D-Draufsicht ist damit wörtlich die Skizze
+des 3D-Modells – eine Datenbasis, zwei Projektionen.
 
 Beide Einstiege bleiben möglich: **nach Prozess** (beratungsintensiv, wie oben)
 oder **nach Produktpalette** (Serienmaschinenbau: Struktur steht, es wird nur
